@@ -1,0 +1,585 @@
+'use client'
+
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
+import { useLanguage } from '@/contexts/LanguageContext'
+import { supabase } from '@/lib/supabase'
+import Navbar from '@/components/Navbar'
+import { Upload, CheckCircle } from 'lucide-react'
+
+const COUNTRIES = ['China', 'Portugal', 'Turkey', 'France', 'Saudi Arabia']
+
+const VISA_TYPES = [
+  'Tourism',
+  'Business',
+  'Study',
+  'Work',
+  'Medical',
+  'Transit',
+  'Family Visit',
+]
+
+const MONTH_NAMES = [
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December'
+]
+
+/* ---------- REGISTRATION WINDOW ---------- */
+
+const isRegistrationOpen = () => {
+  const today = new Date().getDate()
+  return today >= 1 && today <= 15
+}
+
+const getNextOpeningDate = () => {
+  const now = new Date()
+  return new Date(now.getFullYear(), now.getMonth() + 1, 1)
+}
+
+/* ---------- MONTHS ---------- */
+
+const generateMonths = () => {
+  const arr: string[] = []
+  const now = new Date()
+
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1)
+    arr.push(d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }))
+  }
+
+  return arr
+}
+
+type QuotaInfo = {
+  priority_slots_used: number
+  priority_slots_remaining: number
+  waiting_list_used: number
+  waiting_list_remaining: number
+  total_requests: number
+  total_remaining: number
+}
+
+export default function BookAppointmentPage() {
+
+  const router = useRouter()
+  const { session, loading: authLoading } = useAuth()
+  const { t, isRTL } = useLanguage()
+
+  const months = useMemo(() => generateMonths(), [])
+
+  const [country, setCountry] = useState<string>('')
+  const [visaType, setVisaType] = useState<string>('')
+  const [month, setMonth] = useState<string>('')
+  const [passport, setPassport] = useState<File | null>(null)
+
+  const [quotaInfo, setQuotaInfo] = useState<QuotaInfo | null>(null)
+
+  const [loading, setLoading] = useState(false)
+  const [quotaLoading, setQuotaLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [verifying, setVerifying] = useState(false)
+const [passportValid, setPassportValid] = useState<boolean | null>(null)
+
+  /* ---------- COUNTDOWN ---------- */
+
+  const [countdown, setCountdown] = useState('')
+
+  useEffect(() => {
+
+    if (isRegistrationOpen()) return
+
+    const interval = setInterval(() => {
+
+      const now = new Date()
+      const next = getNextOpeningDate()
+
+      const diff = next.getTime() - now.getTime()
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24)
+      const minutes = Math.floor((diff / (1000 * 60)) % 60)
+
+      setCountdown(`${days}d ${hours}h ${minutes}m`)
+
+    }, 1000)
+
+    return () => clearInterval(interval)
+
+  }, [])
+
+  useEffect(() => {
+    if (!authLoading && !session) {
+      router.push('/auth/login?redirect=/appointments/book')
+    }
+  }, [session, authLoading, router])
+
+  const parseSelectedMonth = useCallback((selectedMonth: string) => {
+    const [monthName, yearStr] = selectedMonth.split(' ')
+    const parsedMonth = MONTH_NAMES.indexOf(monthName) + 1
+    const parsedYear = parseInt(yearStr, 10)
+
+    if (!parsedMonth || Number.isNaN(parsedYear)) {
+      throw new Error('Invalid appointment month')
+    }
+
+    return { parsedMonth, parsedYear }
+  }, [])
+
+ const uploadPassport = async () => {
+
+  if (!passport || !session?.user) return null
+
+  const ext = passport.name.split('.').pop() || 'pdf'
+  const name = `${Date.now()}.${ext}`
+  const path = `appointments/${session.user.id}/${name}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('documents')
+    .upload(path, passport)
+
+  if (uploadError) throw uploadError
+
+  return path
+}
+    /* ---------- VERIFY PASSPORT ---------- */
+
+const verifyPassport = async (file: File) => {
+
+  try {
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const res = await fetch(
+      'https://rvsaxetlfqfzkqsevgbt.supabase.co/functions/v1/verify-passport',
+      {
+        method: 'POST',
+        body: formData,
+      }
+    )
+
+    const data = await res.json()
+
+    if (!res.ok) throw new Error(data.error || 'Verification failed')
+
+    return data
+
+  } catch (e:any) {
+
+    throw new Error(e.message || 'Passport verification failed')
+
+  }
+
+}
+  
+  const fetchQuota = useCallback(async () => {
+    if (!country || !month) {
+      setQuotaInfo(null)
+      return
+    }
+
+    try {
+      setQuotaLoading(true)
+
+      const { parsedMonth, parsedYear } = parseSelectedMonth(month)
+
+      const { data, error: countError } = await supabase
+        .from('visa_appointments')
+        .select('id,status', { count: 'exact' })
+        .eq('country', country)
+        .eq('month', parsedMonth)
+        .eq('year', parsedYear)
+
+      if (countError) throw countError
+
+      const rows = data || []
+
+      const priorityUsed = rows.filter(
+        (row) => row.status === 'priority_request'
+      ).length
+
+      const waitingUsed = rows.filter(
+        (row) => row.status === 'waiting_list'
+      ).length
+
+      const total = rows.length
+
+      setQuotaInfo({
+        priority_slots_used: priorityUsed,
+        priority_slots_remaining: Math.max(0, 5 - priorityUsed),
+        waiting_list_used: waitingUsed,
+        waiting_list_remaining: Math.max(0, 10 - waitingUsed),
+        total_requests: total,
+        total_remaining: Math.max(0, 15 - total),
+      })
+    } catch (e) {
+      console.error('Error fetching quota:', e)
+      setQuotaInfo(null)
+    } finally {
+      setQuotaLoading(false)
+    }
+  }, [country, month, parseSelectedMonth])
+
+  useEffect(() => {
+    fetchQuota()
+
+    const interval = setInterval(() => {
+      fetchQuota()
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [fetchQuota])
+
+  const submit = async () => {
+    if (!session?.user) {
+      alert(t.appointments.book.errors.sessionExpired)
+      router.push('/auth/login?redirect=/appointments/book')
+      return
+    }
+
+    if (!country || !visaType || !month || !passport) {
+      setError(t.appointments.book.errors.fillAllFields)
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
+    try {
+      const { data: windowData, error: windowError } = await supabase.rpc(
+        'check_registration_window'
+      )
+
+      if (windowError) throw windowError
+
+      if (!windowData) {
+        alert(t.appointments.book.errors.registrationClosed)
+        return
+      }
+
+      const { parsedMonth, parsedYear } = parseSelectedMonth(month)
+
+      const { data: existingRows, error: existingError } = await supabase
+        .from('visa_appointments')
+        .select('id,status')
+        .eq('country', country)
+        .eq('month', parsedMonth)
+        .eq('year', parsedYear)
+
+      if (existingError) throw existingError
+
+      const existing = existingRows || []
+      const total = existing.length
+
+      if (total >= 15) {
+        alert(t.appointments.book.errors.slotsFull.replace('{country}', country).replace('{month}', month))
+        await fetchQuota()
+        return
+      }
+
+      let status = 'priority_request'
+      let queuePosition = total + 1
+
+      if (total >= 5) {
+        status = 'waiting_list'
+      }
+
+     /* ---------- VERIFY PASSPORT FIRST ---------- */
+
+const verification = await verifyPassport(passport)
+
+if (!verification.valid) {
+  setError(t.appointments.book.errors.invalidPassport)
+  setLoading(false)
+  return
+}
+
+/* ---------- THEN UPLOAD ---------- */
+
+const file = await uploadPassport()
+
+      if (!file) {
+        throw new Error('Failed to upload passport file')
+      }
+
+      const { error: insertError } = await supabase.from('visa_appointments').insert({
+        user_id: session.user.id,
+        country,
+        visa_type: visaType,
+        appointment_month: month,
+        month: parsedMonth,
+        year: parsedYear,
+        queue_position: queuePosition,
+        passport_file: file,
+        status,
+        registration_date: new Date().toISOString().split('T')[0],
+      })
+
+      if (insertError) throw insertError
+
+      router.push(`/appointments/success?status=${status}&queue=${queuePosition}`)
+      
+    } catch (e: any) {
+      console.error(e)
+      setError(e?.message || t.appointments.book.errors.fillAllFields)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <Navbar />
+        <div className="flex min-h-[70vh] items-center justify-center px-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent" />
+        </div>
+      </div>
+    )
+  }
+
+  if (!session) return null
+
+  /* ---------- CLOSED PAGE ---------- */
+
+  if (!isRegistrationOpen()) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+
+        <Navbar />
+
+        <div className="flex items-center justify-center h-[70vh] px-6">
+
+          <div className="bg-white p-10 rounded-2xl shadow-xl text-center max-w-lg">
+
+            <h1 className="text-3xl font-bold text-gray-800 mb-4">
+              {t.appointments.book.closedTitle}
+            </h1>
+
+            <p className="text-gray-600 mb-6">
+              {t.appointments.book.closedMessage}
+            </p>
+
+            <p className="text-gray-700">
+              {t.appointments.book.nextOpening}
+            </p>
+
+            <div className="text-4xl font-bold text-emerald-600 mt-3">
+              {countdown}
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+
+      <Navbar />
+
+      <div className="bg-gradient-to-r from-emerald-600 to-teal-600 py-12 text-white sm:py-14">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6">
+          <h1 className="text-3xl font-bold text-white sm:text-4xl">
+            {t.appointments.book.title}
+          </h1>
+          <p className="mt-2 text-sm text-white/90 sm:text-base">
+            {t.appointments.book.subtitle}
+          </p>
+        </div>
+      </div>
+ <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
+        <div className="space-y-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-lg sm:p-8">
+          {error && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <h2 className="mb-2 text-lg font-bold text-gray-900">{t.appointments.book.countryLabel}</h2>
+
+            <select
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base font-medium text-gray-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+            >
+              <option value="">{t.appointments.book.countryPlaceholder}</option>
+              {COUNTRIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <h2 className="mb-2 text-lg font-bold text-gray-900">{t.appointments.book.visaTypeLabel}</h2>
+
+            <select
+              value={visaType}
+              onChange={(e) => setVisaType(e.target.value)}
+              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base font-medium text-gray-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+            >
+              <option value="">{t.appointments.book.visaTypePlaceholder}</option>
+              {VISA_TYPES.map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <h2 className="mb-2 text-lg font-bold text-gray-900">
+              {t.appointments.book.monthLabel}
+            </h2>
+
+            <select
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base font-medium text-gray-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+            >
+              <option value="">{t.appointments.book.monthPlaceholder}</option>
+              {months.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+            <h3 className="mb-2 text-lg font-bold text-emerald-800">
+              {t.appointments.book.remainingSlots.replace('{country}', country ? `for ${country}` : '')}
+            </h3>
+
+            {!country || !month ? (
+              <p className="text-sm text-gray-700">
+                {t.appointments.book.selectToViewSlots}
+              </p>
+            ) : quotaLoading ? (
+              <p className="text-sm text-gray-700">{t.appointments.book.loadingSlots}</p>
+            ) : quotaInfo ? (
+              <div className="space-y-1 text-sm text-gray-800">
+                <p>
+                  {t.appointments.book.quotaLabels.priorityUsed.replace('{used}', quotaInfo.priority_slots_used.toString())}
+                </p>
+                <p>
+                  {t.appointments.book.quotaLabels.priorityRemaining.replace('{remaining}', quotaInfo.priority_slots_remaining.toString())}
+                </p>
+                <p>
+                  {t.appointments.book.quotaLabels.waitingUsed.replace('{used}', quotaInfo.waiting_list_used.toString())}
+                </p>
+                <p>
+                  {t.appointments.book.quotaLabels.waitingRemaining.replace('{remaining}', quotaInfo.waiting_list_remaining.toString())}
+                </p>
+                <p>
+                  {t.appointments.book.quotaLabels.totalRequests.replace('{total}', quotaInfo.total_requests.toString())}
+                </p>
+                <p>
+                  {t.appointments.book.quotaLabels.totalRemaining.replace('{remaining}', quotaInfo.total_remaining.toString())}
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-700">
+                {t.appointments.book.unableLoadSlots}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <h2 className="mb-3 text-lg font-bold text-gray-900">
+              {t.appointments.book.passportLabel}
+            </h2>
+
+            <label className="block cursor-pointer">
+              <div className="rounded-xl border-2 border-dashed border-gray-300 p-6 text-center transition hover:border-emerald-500 sm:p-10">
+                {passport ? (
+                  <div>
+                    <CheckCircle
+                      className="mx-auto mb-3 text-emerald-600"
+                      size={40}
+                    />
+                    <p className="break-all text-sm font-semibold text-gray-800 sm:text-base">
+                      {passport.name}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {(passport.size / 1024).toFixed(1)} KB
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <Upload className="mx-auto mb-3 text-gray-400" size={40} />
+                    <p className="font-medium text-gray-700">{t.appointments.book.passportUpload}</p>
+                    <p className="text-sm text-gray-500">{t.appointments.book.passportFormat}</p>
+                  </div>
+                )}
+              </div>
+
+             <input
+  type="file"
+  accept="image/*,application/pdf"
+  className="hidden"
+  onChange={async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setPassport(file)
+    setPassportValid(null)
+    setVerifying(true)
+    setError('')
+
+    try {
+      const res = await verifyPassport(file)
+
+      if (res.valid) {
+        setPassportValid(true)
+      } else {
+        setPassportValid(false)
+        setError(t.appointments.book.errors.invalidPassport)
+      }
+    } catch (err: any) {
+      setPassportValid(false)
+      setError(err.message)
+    } finally {
+      setVerifying(false)
+    }
+  }}
+/>
+            </label>
+            {verifying && (
+  <p className="mt-3 text-sm text-blue-600">
+    {t.appointments.book.verification.verifying}
+  </p>
+)}
+
+{passportValid === true && (
+  <p className="mt-3 text-sm text-green-600 font-semibold">
+    {t.appointments.book.verification.verified}
+  </p>
+)}
+
+{passportValid === false && (
+  <p className="mt-3 text-sm text-red-600 font-semibold">
+    {t.appointments.book.verification.invalid}
+  </p>
+)}
+          </div>
+
+          <button
+  onClick={submit}
+  disabled={loading || verifying || passportValid === false}
+            className="w-full rounded-xl bg-emerald-600 py-4 text-base font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {loading ? t.appointments.book.buttons.submitting : t.appointments.book.buttons.submit}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
