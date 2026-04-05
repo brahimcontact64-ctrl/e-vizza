@@ -78,7 +78,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <Container className="py-10">
+    <Container className="py-10 pb-32">
       <div className="mb-10">
         <h1 className="text-3xl font-bold text-[#0B3948] sm:text-4xl">
           {t.dashboard.home.welcome.replace('{name}', profile?.full_name || session?.user.email || '')}
@@ -221,6 +221,17 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Persistent Apply CTA — always visible, clears the floating WhatsApp button */}
+      <div className="mt-10">
+        <Link
+          href="/apply/new"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#00D474] to-[#00B863] py-4 text-base font-semibold text-white shadow-lg shadow-[#00D474]/30 transition-all hover:opacity-90 hover:scale-[1.01] active:scale-100"
+        >
+          <Plus size={20} />
+          {t.dashboard.home.applyVisa}
+        </Link>
       </div>
     </Container>
   );
