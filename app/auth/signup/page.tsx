@@ -7,8 +7,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Loader as Loader2 } from 'lucide-react';
 import Card from '@/components/Card';
-import Input from '@/components/Input';
-import Button from '@/components/Button';
 
 function GoogleIcon() {
   return (
@@ -23,67 +21,36 @@ function GoogleIcon() {
 
 export default function SignupPage() {
   const router = useRouter();
-  const { signUpWithEmail, signInWithGoogle } = useAuth();
+  const { signInWithGoogle, loading: authLoading } = useAuth();
   const { t } = useLanguage();
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleGoogleLogin = async () => {
     setError('');
     setGoogleLoading(true);
+
     try {
       await signInWithGoogle();
+      router.replace('/dashboard');
+      router.refresh();
     } catch {
       setError(t.auth.google.failed);
       setGoogleLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    if (!fullName || !email || !password || !confirmPassword) {
-      setError(t.auth.signup.errors.emptyFields);
-      return;
-    }
-
-    if (!email.includes('@')) {
-      setError(t.auth.signup.errors.invalidEmail);
-      return;
-    }
-
-    if (password.length < 6) {
-      setError(t.auth.signup.errors.passwordTooShort);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError(t.auth.signup.errors.passwordsDontMatch);
-      return;
-    }
-
-    setLoading(true);
-
-    const { error: signUpError } = await signUpWithEmail(email, password, fullName);
-
-    if (signUpError) {
-      setError(t.auth.signup.errors.failed);
-      setLoading(false);
-    } else {
-      router.push('/dashboard');
-    }
-  };
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="animate-spin text-primary" size={48} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#F7FBFA] via-white to-white px-6 py-12">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-6">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-r from-[#00D474] to-[#00B863] shadow-lg shadow-[#00D474]/30">
@@ -102,12 +69,11 @@ export default function SignupPage() {
             </div>
           )}
 
-          {/* Google Button */}
           <button
             type="button"
             onClick={handleGoogleLogin}
-            disabled={googleLoading || loading}
-            className="mb-5 flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-[#DDEAE5] bg-white px-5 text-sm font-semibold text-[#0B3948] shadow-sm transition-all duration-200 hover:border-[#00D474] hover:bg-[#F7FBFA] hover:shadow-md disabled:opacity-60"
+            disabled={googleLoading}
+            className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-[#DDEAE5] bg-white px-5 text-sm font-semibold text-[#0B3948] shadow-sm transition-all duration-200 hover:border-[#00D474] hover:bg-[#F7FBFA] hover:shadow-md hover:scale-[1.01] disabled:opacity-60"
           >
             {googleLoading ? (
               <Loader2 className="animate-spin" size={20} />
@@ -116,69 +82,6 @@ export default function SignupPage() {
             )}
             <span>{googleLoading ? t.auth.google.loading : t.auth.google.button}</span>
           </button>
-
-          {/* Divider */}
-          <div className="relative mb-5 flex items-center">
-            <div className="flex-1 border-t border-[#DDEAE5]" />
-            <span className="mx-4 text-xs font-medium text-[#9AAFB7] uppercase tracking-wider">
-              {t.auth.divider}
-            </span>
-            <div className="flex-1 border-t border-[#DDEAE5]" />
-          </div>
-
-          {/* Email Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <Input
-              id="fullName"
-              type="text"
-              label={t.auth.signup.fullNameLabel}
-              placeholder={t.auth.signup.fullNamePlaceholder}
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-            />
-
-            <Input
-              id="email"
-              type="email"
-              label={t.auth.signup.emailLabel}
-              placeholder={t.auth.signup.emailPlaceholder}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-
-            <Input
-              id="password"
-              type="password"
-              label={t.auth.signup.passwordLabel}
-              placeholder={t.auth.signup.passwordPlaceholder}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-
-            <Input
-              id="confirmPassword"
-              type="password"
-              label={t.auth.signup.confirmPasswordLabel}
-              placeholder={t.auth.signup.confirmPasswordPlaceholder}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-
-            <Button type="submit" disabled={loading || googleLoading} size="lg" fullWidth>
-              {loading ? (
-                <>
-                  <Loader2 className="animate-spin mr-2" size={20} />
-                  {t.auth.signup.loading}
-                </>
-              ) : (
-                t.auth.signup.button
-              )}
-            </Button>
-          </form>
 
           <div className="mt-6 text-center text-sm">
             <span className="text-[#6B7C85]">{t.auth.signup.alreadyHaveAccount} </span>

@@ -37,17 +37,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
+  const ensureProfileForAuthenticatedUser = async () => {
     try {
-      const { data } = await supabase
+      const {
+        data: { user: authenticatedUser },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) {
+        throw userError;
+      }
+
+      if (!authenticatedUser) {
+        setProfile(null);
+        return;
+      }
+
+      const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+        .eq('id', authenticatedUser.id)
+        .single();
 
-      setProfile(data ?? null);
+      if (profileError) {
+        const noProfileFound =
+          profileError.code === 'PGRST116' ||
+          profileError.message.toLowerCase().includes('no rows');
+
+        if (!noProfileFound) {
+          throw profileError;
+        }
+
+        const { error: insertError } = await supabase.from('profiles').insert({
+          id: authenticatedUser.id,
+          email: authenticatedUser.email,
+          full_name: authenticatedUser.user_metadata?.full_name,
+          avatar_url: authenticatedUser.user_metadata?.avatar_url,
+        });
+
+        if (insertError) {
+          throw insertError;
+        }
+
+        const { data: createdProfile, error: createdProfileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', authenticatedUser.id)
+          .single();
+
+        if (createdProfileError) {
+          throw createdProfileError;
+        }
+
+        setProfile(createdProfile as Profile);
+        return;
+      }
+
+      setProfile(existingProfile as Profile);
     } catch (error) {
-      console.error('Profile fetch error:', error);
+      console.error('Profile ensure error:', error);
       setProfile(null);
     }
   };
@@ -89,7 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setSession(currentSession);
       setUser(currentSession.user);
-      await fetchProfile(currentSession.user.id);
+      await ensureProfileForAuthenticatedUser();
     } catch (error) {
       await handleAuthFailure(error);
     }
@@ -115,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(initialSession?.user ?? null);
 
         if (initialSession?.user) {
-          await fetchProfile(initialSession.user.id);
+          await ensureProfileForAuthenticatedUser();
         } else {
           setProfile(null);
         }
@@ -145,7 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(nextSession?.user ?? null);
 
       if (nextSession?.user) {
-        await fetchProfile(nextSession.user.id);
+        await ensureProfileForAuthenticatedUser();
       } else {
         setProfile(null);
       }
@@ -175,7 +223,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data?.session) {
         setSession(data.session);
         setUser(data.session.user);
-        await fetchProfile(data.session.user.id);
+        await ensureProfileForAuthenticatedUser();
       }
 
       return {

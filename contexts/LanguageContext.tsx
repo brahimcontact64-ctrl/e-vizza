@@ -38,7 +38,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Load language from localStorage with error handling
     try {
-      const saved = (localStorage.getItem('lang') || localStorage.getItem('language')) as Language;
+      const saved = (
+        localStorage.getItem('app_lang') ||
+        localStorage.getItem('lang') ||
+        localStorage.getItem('language')
+      ) as Language;
       const initialLanguage = saved && ['en', 'fr', 'ar'].includes(saved) ? saved : 'fr';
       setLanguageState(initialLanguage);
     } catch (error) {
@@ -79,6 +83,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
     // Save to localStorage with error handling
     try {
+      localStorage.setItem('app_lang', lang);
       localStorage.setItem('lang', lang);
       localStorage.setItem('language', lang);
     } catch (error) {

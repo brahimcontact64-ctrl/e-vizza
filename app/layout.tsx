@@ -22,7 +22,7 @@ export default function RootLayout({
     <html lang="fr" dir="ltr" suppressHydrationWarning>
       <body className={`${inter.className} max-w-full overflow-x-hidden`}>
         <Script id="init-language-dir" strategy="beforeInteractive">
-          {`(function () { try { var lang = localStorage.getItem('lang') || localStorage.getItem('language') || 'fr'; document.documentElement.lang = lang; document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'; } catch (e) {} })();`}
+          {`(function () { try { var lang = localStorage.getItem('app_lang') || localStorage.getItem('lang') || localStorage.getItem('language') || 'fr'; document.documentElement.lang = lang; document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'; } catch (e) {} })();`}
         </Script>
         <div className="max-w-full overflow-hidden">
           <LanguageProvider>

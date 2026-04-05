@@ -7,8 +7,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Loader as Loader2 } from 'lucide-react';
 import Card from '@/components/Card';
-import Input from '@/components/Input';
-import Button from '@/components/Button';
 
 function GoogleIcon() {
   return (
@@ -24,12 +22,8 @@ function GoogleIcon() {
 export default function LoginPage() {
   const router = useRouter();
 
-  const { signInWithEmail, signInWithGoogle, loading: authLoading } = useAuth();
+  const { signInWithGoogle, loading: authLoading } = useAuth();
   const { t } = useLanguage();
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -41,41 +35,6 @@ export default function LoginPage() {
     } catch {
       setError(t.auth.google.failed);
       setGoogleLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    if (!email || !password) {
-      setError(t.auth.login.errors.emptyFields);
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const { error, session } = await signInWithEmail(email, password);
-
-      if (error) {
-        setError(t.auth.login.errors.failed);
-        setLoading(false);
-        return;
-      }
-
-      if (!session) {
-        setError(t.auth.login.errors.noSession);
-        setLoading(false);
-        return;
-      }
-
-      router.replace('/');
-      router.refresh();
-    } catch (err) {
-      console.error(err);
-      setError(t.auth.login.errors.failed);
-      setLoading(false);
     }
   };
 
@@ -109,11 +68,10 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Google Button */}
           <button
             type="button"
             onClick={handleGoogleLogin}
-            disabled={googleLoading || loading}
+            disabled={googleLoading}
             className="mb-5 flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-[#DDEAE5] bg-white px-5 text-sm font-semibold text-[#0B3948] shadow-sm transition-all duration-200 hover:border-[#00D474] hover:bg-[#F7FBFA] hover:shadow-md disabled:opacity-60"
           >
             {googleLoading ? (
@@ -123,58 +81,6 @@ export default function LoginPage() {
             )}
             <span>{googleLoading ? t.auth.google.loading : t.auth.google.button}</span>
           </button>
-
-          {/* Divider */}
-          <div className="relative mb-5 flex items-center">
-            <div className="flex-1 border-t border-[#DDEAE5]" />
-            <span className="mx-4 text-xs font-medium text-[#9AAFB7] uppercase tracking-wider">
-              {t.auth.divider}
-            </span>
-            <div className="flex-1 border-t border-[#DDEAE5]" />
-          </div>
-
-          {/* Email Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              label={t.auth.login.emailLabel}
-              placeholder={t.auth.login.emailPlaceholder}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              label={t.auth.login.passwordLabel}
-              placeholder={t.auth.login.passwordPlaceholder}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-
-            <Button type="submit" disabled={loading || googleLoading} size="lg" fullWidth>
-              {loading ? (
-                <>
-                  <Loader2 className="animate-spin mr-2" size={20} />
-                  {t.auth.login.loading}
-                </>
-              ) : (
-                t.auth.login.button
-              )}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center text-sm">
-            <span className="text-[#6B7C85]">{t.auth.noAccount} </span>
-            <Link href="/auth/signup" className="font-semibold text-[#00B863] hover:underline">
-              {t.auth.signUp}
-            </Link>
-          </div>
         </Card>
 
         <div className="mt-6 text-center">
