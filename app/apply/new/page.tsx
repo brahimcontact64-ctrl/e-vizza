@@ -46,6 +46,7 @@ export default function ApplyNewPage() {
     passport_number?: string;
     expiry_date?: string;
   } | null>(null);
+  const [passportLoaded, setPassportLoaded] = useState(false);
   const [entryDate, setEntryDate] = useState('');
   const [exitDate, setExitDate] = useState('');
 
@@ -62,7 +63,12 @@ export default function ApplyNewPage() {
   }, [visaId]);
 useEffect(() => {
   const fetchPassport = async () => {
-    if (!session?.user) return;
+    if (!session?.user) {
+      setPassportValid(false);
+      setPassportVaultData(null);
+      setPassportLoaded(true);
+      return;
+    }
 
   const { data, error } = await supabase
   .from('passport_vault')
@@ -72,12 +78,14 @@ useEffect(() => {
 
 if (error) {
   console.error('Passport fetch error:', error);
+  setPassportLoaded(true);
   return;
 }
 if (!data) {
-      console.log('passport vault: no record found for user');
-      setPassportValid(null);
+      console.log('No passport in vault');
+      setPassportValid(false);
       setPassportVaultData(null);
+      setPassportLoaded(true);
       return;
     }
 
@@ -94,10 +102,15 @@ if (!data) {
     // It is ONLY used for display warnings — it does NOT block the flow when
     // vault data exists.
     setPassportValid(diffMonths >= 6);
+    setPassportLoaded(true);
   };
 
   fetchPassport();
 }, [session]);
+
+useEffect(() => {
+  console.log('passportValid:', passportValid);
+}, [passportValid]);
 
   const fetchVisa = async () => {
     if (!visaId) return;
@@ -154,8 +167,15 @@ const verifyPassport = async (file: File) => {
 };
 
 const handleFileUpload = async (type: string, file: File) => {
+  const hasPassport = passportValid === true || passportVaultData !== null;
+
   if (file.size > 10 * 1024 * 1024) {
     alert(t.apply.documents.fileSizeLimit);
+    return;
+  }
+
+  if (type.toLowerCase().includes('passport') && hasPassport) {
+    alert('Passport already exists in your account');
     return;
   }
 
@@ -372,9 +392,19 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
     );
   }
 
+  if (!passportLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="animate-spin text-[#00B863]" size={48} />
+      </div>
+    );
+  }
+
   if (!session) {
     return null;
   }
+
+  const hasPassport = passportValid === true || passportVaultData !== null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -472,13 +502,13 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
         {step === 2 && (
           <Card>
             <h2 className="mb-2 text-2xl font-bold text-[#0B3948]">{t.apply.documents.title}</h2>
-            {passportValid === true && (
+            {hasPassport && (
  <div className="bg-green-100 border border-green-400 p-3 rounded mb-4 text-green-800 font-medium">
   {t.apply.documents.passportSaved}
 </div>
 )}
            <p className="mb-6 text-[#355865]">
-  {passportValid === true
+  {hasPassport
     ? t.apply.documents.passportSavedDesc
     : t.apply.documents.defaultDesc}
 </p>
@@ -587,23 +617,7 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
               </Button>
               <Button
                onClick={() => setStep(3)}
-                disabled={(() => {
-                  if (verifying) return true;
-                  const passportCovered =
-                    passportVaultData !== null ||
-                    (passportValid === true &&
-                      documents.some((d) => d.type.toLowerCase().includes('passport')));
-                  const nonPassportRequired = (visa.requirements ?? []).filter(
-                    (r) => !r.toLowerCase().includes('passport')
-                  );
-                  const nonPassportUploaded = documents.filter(
-                    (d) => !d.type.toLowerCase().includes('passport')
-                  );
-                  const nonPassportCovered =
-                    nonPassportRequired.length === 0 ||
-                    nonPassportUploaded.length >= nonPassportRequired.length;
-                  return !passportCovered || !nonPassportCovered;
-                })()}
+                disabled={(!hasPassport && documents.length === 0) || verifying}
                 className="flex-1"
               >
                 {t.apply.documents.continueButton}
@@ -644,7 +658,7 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
             </div>
 
             <div className="mb-8 rounded-2xl bg-[#F7FBFA] p-6">
-              <h3 className="mb-4 text-lg font-semibold text-[#0B3948]">{t.apply.review.uploadedDocuments.replace('{count}', (documents.length + (passportValid === true ? 1 : 0)).toString())}</h3>
+              <h3 className="mb-4 text-lg font-semibold text-[#0B3948]">{t.apply.review.uploadedDocuments.replace('{count}', (documents.length + (hasPassport ? 1 : 0)).toString())}</h3>
              <div className="space-y-2">
   {documents.map((doc, idx) => (
     <div key={idx} className="flex items-center text-sm text-[#355865]">
@@ -653,7 +667,7 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
     </div>
   ))}
 
-  {passportValid === true && (
+  {hasPassport && (
     <div className="flex items-center text-sm text-[#355865]">
       <CheckCircle size={16} className="text-green-500 mr-2 flex-shrink-0" />
       <span>{t.apply.review.passportFromVault}</span>
