@@ -3,11 +3,15 @@ import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
 export async function proxy(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  if (pathname.startsWith('/auth/callback')) {
+    return NextResponse.next();
+  }
+
   const res = NextResponse.next({
     request: req,
   });
-
-  const { pathname } = req.nextUrl;
 
   if (pathname.startsWith('/auth/') || pathname.startsWith('/api/')) {
     return res;
@@ -71,7 +75,6 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/auth/:path*',
     '/api/:path*',
     '/dashboard/:path*',
     '/applications/:path*',
