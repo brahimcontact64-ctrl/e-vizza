@@ -4,12 +4,14 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useLanguage } from '@/contexts/LanguageContext'
 import Navbar from '@/components/Navbar'
+import Card from '@/components/Card'
+import Container from '@/components/Container'
 import { CheckCircle } from 'lucide-react'
 
 export default function AppointmentSuccessPage() {
 
 const params = useSearchParams()
-const { t, isRTL } = useLanguage()
+const { t } = useLanguage()
 
 const status = params.get('status')
 const queue = params.get('queue')
@@ -18,123 +20,62 @@ const isPriority = status === 'priority_request'
 
 return (
 
-<div className="min-h-screen bg-gray-100">
+	<div className="min-h-screen bg-background">
+		<Navbar />
 
-<Navbar/>
+		<Container size="md" className="py-16">
+			<Card padding="lg" className="text-center">
+				<div className="mb-6 flex justify-center">
+					<div className="rounded-full bg-[#E8FFF4] p-4">
+						<CheckCircle className="text-[#00B863]" size={60} />
+					</div>
+				</div>
 
-<div className="max-w-4xl mx-auto px-4 py-16">
+				<h1 className="mb-3 text-2xl font-bold text-[#0B3948] sm:text-3xl">
+					{t.appointments.success.title}
+				</h1>
 
-<div className="bg-white shadow-xl rounded-2xl p-8 sm:p-12 text-center">
+				<p className="mb-8 ui-muted">{t.appointments.success.message}</p>
 
-{/* ICON */}
+				<div className="mb-8 rounded-2xl border border-[#BFEFD8] bg-[#F1FFF8] p-6">
+					<div className="grid grid-cols-1 gap-6 text-center sm:grid-cols-2">
+						<div>
+							<p className="text-sm ui-muted">{t.appointments.success.statusLabel}</p>
+							<p className="mt-1 text-lg font-semibold text-[#00B863]">
+								{isPriority ? t.appointments.success.priorityStatus : t.appointments.success.waitingStatus}
+							</p>
+						</div>
 
-<div className="flex justify-center mb-6">
+						<div>
+							<p className="text-sm ui-muted">{t.appointments.success.queueLabel}</p>
+							<p className="mt-1 text-2xl font-bold text-[#0B3948]">#{queue || '—'}</p>
+						</div>
+					</div>
+				</div>
 
-<div className="bg-emerald-100 p-4 rounded-full">
+				<div className="mb-8 rounded-2xl border border-[#DDEAE5] bg-[#F7FBFA] p-6 text-sm text-[#355865]">
+					<p className="mb-2">{t.appointments.success.infoText1}</p>
+					<p>{t.appointments.success.infoText2}</p>
+				</div>
 
-<CheckCircle
-className="text-emerald-600"
-size={60}
-/>
+				<div className="flex flex-col justify-center gap-4 sm:flex-row">
+					<Link
+						href="/dashboard/appointments"
+						className="inline-flex h-12 items-center justify-center rounded-2xl bg-gradient-to-r from-[#00D474] to-[#00B863] px-6 font-semibold text-white"
+					>
+						{t.appointments.success.trackButton}
+					</Link>
 
-</div>
-
-</div>
-
-{/* TITLE */}
-
-<h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3">
-
-{t.appointments.success.title}
-
-</h1>
-
-<p className="text-gray-600 mb-8">
-
-{t.appointments.success.message}
-
-</p>
-
-{/* STATUS BOX */}
-
-<div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 mb-8">
-
-<div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-center">
-
-<div>
-
-<p className="text-sm text-gray-600">
-{t.appointments.success.statusLabel}
-</p>
-
-<p className="text-lg font-semibold text-emerald-700 mt-1">
-
-{isPriority ? t.appointments.success.priorityStatus : t.appointments.success.waitingStatus}
-
-</p>
-
-</div>
-
-<div>
-
-<p className="text-sm text-gray-600">
-{t.appointments.success.queueLabel}
-</p>
-
-<p className="text-2xl font-bold text-gray-900 mt-1">
-#{queue || '—'}
-</p>
-
-</div>
-
-</div>
-
-</div>
-
-{/* INFO */}
-
-<div className="bg-gray-50 border border-gray-200 rounded-xl p-6 mb-8 text-sm text-gray-700">
-
-<p className="mb-2">
-{t.appointments.success.infoText1}
-</p>
-
-<p>
-{t.appointments.success.infoText2}
-</p>
-
-</div>
-
-{/* BUTTONS */}
-
-<div className="flex flex-col sm:flex-row gap-4 justify-center">
-
-<Link
-href="/dashboard/appointments"
-className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-emerald-700 transition"
->
-
-{t.appointments.success.trackButton}
-
-</Link>
-
-<Link
-href="/"
-className="border border-gray-300 px-6 py-3 rounded-xl font-semibold text-gray-700 hover:bg-gray-100 transition"
->
-
-{t.appointments.success.homeButton}
-
-</Link>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
+					<Link
+						href="/"
+						className="inline-flex h-12 items-center justify-center rounded-2xl border border-[#DDEAE5] px-6 font-semibold text-[#355865] transition hover:bg-[#F1F7F5]"
+					>
+						{t.appointments.success.homeButton}
+					</Link>
+				</div>
+			</Card>
+		</Container>
+	</div>
 )
 
 }

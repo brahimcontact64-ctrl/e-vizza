@@ -6,6 +6,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { supabase } from '@/lib/supabase'
 import { Application } from '@/types/database'
+import Container from '@/components/Container'
+import StatusLabel from '@/components/StatusLabel'
 import { FileText, ArrowRight, Plus } from 'lucide-react'
 
 export default function ApplicationsPage() {
@@ -57,54 +59,20 @@ export default function ApplicationsPage() {
 
   }
 
-  const getStatusColor = (status: string) => {
-
-    const colors: Record<string, string> = {
-
-      draft: 'bg-gray-100 text-gray-700',
-      submitted: 'bg-green-100 text-green-700',
-      reviewing: 'bg-yellow-100 text-yellow-700',
-      sent_to_freelancer: 'bg-purple-100 text-purple-700',
-      approved: 'bg-emerald-100 text-emerald-700',
-      rejected: 'bg-red-100 text-red-700',
-      waiting_list: 'bg-yellow-100 text-yellow-700',
-
-    }
-
-    return colors[status] || 'bg-gray-100 text-gray-700'
-
-  }
-
-  const getStatusLabel = (status: string) => {
-
-    const labels: Record<string, string> = {
-      submitted: 'Submitted',
-      reviewing: 'Reviewing',
-      rejected: 'Rejected',
-      approved: 'Approved',
-      waiting_list: 'Waiting List',
-      sent_to_freelancer: 'Sent to Freelancer',
-      draft: 'Draft',
-    }
-
-    return labels[status] || status.replace(/_/g, ' ')
-
-  }
-
   if (loading) {
 
     return (
 
-      <div className="max-w-5xl mx-auto py-10 px-4 sm:px-6">
+      <Container size="lg" className="py-10">
 
         <div className="animate-pulse space-y-4">
 
-          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-          <div className="h-24 bg-gray-200 rounded-xl"></div>
+          <div className="h-8 w-1/3 rounded bg-[#E8F1EE]"></div>
+          <div className="h-24 rounded-xl bg-[#E8F1EE]"></div>
 
         </div>
 
-      </div>
+      </Container>
 
     )
 
@@ -112,7 +80,7 @@ export default function ApplicationsPage() {
 
   return (
 
-    <div className="max-w-5xl mx-auto py-10 px-4 sm:px-6">
+    <Container size="lg" className="py-10">
 
       {/* HEADER */}
 
@@ -120,19 +88,19 @@ export default function ApplicationsPage() {
 
         <div>
 
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
+          <h1 className="text-3xl sm:text-4xl font-bold text-[#0B3948]">
             {t.applications.title}
           </h1>
 
-          <p className="text-gray-500 mt-2 leading-relaxed max-w-2xl">
-            {t?.dashboard?.applications?.subtitle || 'Applications'}
+          <p className="mt-2 max-w-2xl leading-relaxed ui-muted">
+            {t.dashboard.applications.subtitle}
           </p>
 
         </div>
 
         <Link
           href="/destinations"
-          className="flex items-center justify-center gap-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-6 py-4 min-h-[52px] rounded-xl font-semibold shadow-md hover:shadow-lg motion-safe:hover:scale-105 transition-all duration-200 w-full sm:w-auto transform-gpu"
+          className="flex min-h-[52px] w-full transform-gpu items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#00D474] to-[#00B863] px-6 py-4 font-semibold text-white shadow-primary transition-all duration-200 motion-safe:hover:scale-105 hover:shadow-lg sm:w-auto"
         >
           <Plus size={18} />
           {t.dashboard.recentApplications.newApplication}
@@ -142,23 +110,23 @@ export default function ApplicationsPage() {
 
       {applications.length === 0 ? (
 
-        <div className="bg-white border border-gray-200 rounded-2xl p-8 sm:p-10 text-center shadow-md">
+        <div className="ui-card p-8 text-center sm:p-10">
 
-          <div className="mx-auto mb-4 w-fit bg-teal-100 p-3 rounded-xl">
-            <FileText size={20} className="text-teal-600" />
+          <div className="mx-auto mb-4 w-fit rounded-xl bg-[#E8FFF4] p-3">
+            <FileText size={20} className="text-[#00B863]" />
           </div>
 
-          <h3 className="text-xl font-bold text-gray-900 mb-2">
+          <h3 className="mb-2 text-xl font-bold text-[#0B3948]">
             {t.applications.noApplications}
           </h3>
 
-          <p className="text-gray-500 text-sm mb-6">
+          <p className="mb-6 text-sm ui-muted">
             {t.applications.startJourney}
           </p>
 
           <Link
             href="/destinations"
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-6 py-4 min-h-[52px] rounded-xl font-semibold shadow-md hover:shadow-lg motion-safe:hover:scale-105 transition-all duration-200 transform-gpu"
+            className="inline-flex min-h-[52px] transform-gpu items-center gap-2 rounded-2xl bg-gradient-to-r from-[#00D474] to-[#00B863] px-6 py-4 font-semibold text-white shadow-primary transition-all duration-200 motion-safe:hover:scale-105 hover:shadow-lg"
           >
             <Plus size={18} />
             {t.dashboard.applications.startApplication}
@@ -175,7 +143,7 @@ export default function ApplicationsPage() {
             <Link
               key={app.id}
               href={`/dashboard/applications/${app.id}`}
-              className="group block bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 shadow-md hover:shadow-lg motion-safe:hover:scale-[1.01] transition-all duration-200 transform-gpu"
+              className="ui-card ui-card-hover group block transform-gpu p-5 transition-all duration-200 motion-safe:hover:scale-[1.01] sm:p-6"
             >
 
               <div className="flex items-start justify-between gap-4">
@@ -184,9 +152,9 @@ export default function ApplicationsPage() {
 
                   {/* ICON */}
 
-                  <div className="bg-teal-100 p-2 rounded-lg flex-shrink-0 transition-all duration-200 group-hover:bg-teal-200">
+                  <div className="flex-shrink-0 rounded-lg bg-[#E8FFF4] p-2 transition-all duration-200 group-hover:bg-[#D6FFE9]">
 
-                    <FileText size={18} className="text-teal-600 transition-all duration-200 motion-safe:group-hover:scale-105" />
+                    <FileText size={18} className="text-[#00B863] transition-all duration-200 motion-safe:group-hover:scale-105" />
 
                   </div>
 
@@ -194,19 +162,13 @@ export default function ApplicationsPage() {
 
                   <div className="flex-1 min-w-0">
 
-                    <h3 className="text-xl font-bold text-gray-900 truncate">
+                    <h3 className="truncate text-xl font-bold text-[#0B3948]">
 
                       {app.visa?.country_name || t.dashboard.recentApplications.defaultTitle}
 
                     </h3>
 
-                    <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold w-fit mt-3 ${getStatusColor(app.status)}`}
-                    >
-
-                      {getStatusLabel(app.status)}
-
-                    </span>
+                    <StatusLabel status={app.status} className="mt-3" />
 
                     {/* DETAILS */}
 
@@ -214,11 +176,11 @@ export default function ApplicationsPage() {
 
                       <div className="space-y-1">
 
-                        <span className="text-gray-500 text-sm">
+                        <span className="text-sm ui-muted">
                           {t.applications.visaType}
                         </span>
 
-                        <p className="text-gray-900 font-semibold">
+                        <p className="font-semibold text-[#0B3948]">
                           {app.visa?.visa_type}
                         </p>
 
@@ -226,11 +188,11 @@ export default function ApplicationsPage() {
 
                       <div className="space-y-1">
 
-                        <span className="text-gray-500 text-sm">
+                        <span className="text-sm ui-muted">
                           {t.dashboard.applications.processingLabel}
                         </span>
 
-                        <p className="text-gray-900 font-semibold">
+                        <p className="font-semibold text-[#0B3948]">
                           {app.visa?.processing_time}
                         </p>
 
@@ -238,11 +200,11 @@ export default function ApplicationsPage() {
 
                       <div className="space-y-1">
 
-                        <span className="text-gray-500 text-sm">
+                        <span className="text-sm ui-muted">
                           {t.applications.appliedOn}
                         </span>
 
-                        <p className="text-gray-900 font-semibold">
+                        <p className="font-semibold text-[#0B3948]">
                           {new Date(app.created_at).toLocaleDateString(undefined, {
                             year: 'numeric',
                             month: 'short',
@@ -256,7 +218,7 @@ export default function ApplicationsPage() {
 
                     {app.admin_notes && (
 
-                      <div className="mt-4 bg-emerald-50 text-emerald-700 text-sm p-3 rounded-xl">
+                      <div className="mt-4 rounded-xl bg-[#F1FFF8] p-3 text-sm text-[#00B863]">
 
                         <span className="font-semibold">
                           {t.dashboard.applications.adminNoteLabel}
@@ -275,7 +237,7 @@ export default function ApplicationsPage() {
 
                 <ArrowRight
                   size={18}
-                  className="text-gray-400 hidden sm:block flex-shrink-0 transition-all duration-200 motion-safe:group-hover:translate-x-0.5"
+                  className="hidden flex-shrink-0 text-[#90A8AF] transition-all duration-200 motion-safe:group-hover:translate-x-0.5 sm:block"
                 />
 
               </div>
@@ -288,7 +250,7 @@ export default function ApplicationsPage() {
 
       )}
 
-    </div>
+    </Container>
 
   )
 

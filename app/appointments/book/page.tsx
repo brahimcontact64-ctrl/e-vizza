@@ -6,6 +6,9 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { supabase } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
+import Container from '@/components/Container'
+import Card from '@/components/Card'
+import Button from '@/components/Button'
 import { Upload, CheckCircle } from 'lucide-react'
 
 const COUNTRIES = ['China', 'Portugal', 'Turkey', 'France', 'Saudi Arabia']
@@ -120,7 +123,7 @@ const [passportValid, setPassportValid] = useState<boolean | null>(null)
     const parsedYear = parseInt(yearStr, 10)
 
     if (!parsedMonth || Number.isNaN(parsedYear)) {
-      throw new Error('Invalid appointment month')
+      throw new Error(t.appointments.book.errors.invalidMonth)
     }
 
     return { parsedMonth, parsedYear }
@@ -161,13 +164,13 @@ const verifyPassport = async (file: File) => {
 
     const data = await res.json()
 
-    if (!res.ok) throw new Error(data.error || 'Verification failed')
+    if (!res.ok) throw new Error(data.error || t.appointments.book.errors.verificationFailed)
 
     return data
 
   } catch (e:any) {
 
-    throw new Error(e.message || 'Passport verification failed')
+    throw new Error(e.message || t.appointments.book.errors.verificationFailed)
 
   }
 
@@ -300,7 +303,7 @@ if (!verification.valid) {
 const file = await uploadPassport()
 
       if (!file) {
-        throw new Error('Failed to upload passport file')
+        throw new Error(t.appointments.book.errors.uploadFailed)
       }
 
       const { error: insertError } = await supabase.from('visa_appointments').insert({
@@ -330,10 +333,10 @@ const file = await uploadPassport()
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-background">
         <Navbar />
         <div className="flex min-h-[70vh] items-center justify-center px-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent" />
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#00B863] border-t-transparent" />
         </div>
       </div>
     )
@@ -345,27 +348,27 @@ const file = await uploadPassport()
 
   if (!isRegistrationOpen()) {
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-background">
 
         <Navbar />
 
         <div className="flex items-center justify-center h-[70vh] px-6">
 
-          <div className="bg-white p-10 rounded-2xl shadow-xl text-center max-w-lg">
+          <div className="ui-card max-w-lg p-10 text-center">
 
-            <h1 className="text-3xl font-bold text-gray-800 mb-4">
+            <h1 className="mb-4 text-3xl font-bold text-[#0B3948]">
               {t.appointments.book.closedTitle}
             </h1>
 
-            <p className="text-gray-600 mb-6">
+            <p className="mb-6 ui-muted">
               {t.appointments.book.closedMessage}
             </p>
 
-            <p className="text-gray-700">
+            <p className="text-[#355865]">
               {t.appointments.book.nextOpening}
             </p>
 
-            <div className="text-4xl font-bold text-emerald-600 mt-3">
+            <div className="mt-3 text-4xl font-bold text-[#00B863]">
               {countdown}
             </div>
 
@@ -378,35 +381,35 @@ const file = await uploadPassport()
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-background">
 
       <Navbar />
 
-      <div className="bg-gradient-to-r from-emerald-600 to-teal-600 py-12 text-white sm:py-14">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6">
+      <div className="bg-gradient-to-r from-[#0B3948] to-[#0E5167] py-12 text-white sm:py-14">
+        <Container size="md">
           <h1 className="text-3xl font-bold text-white sm:text-4xl">
             {t.appointments.book.title}
           </h1>
           <p className="mt-2 text-sm text-white/90 sm:text-base">
             {t.appointments.book.subtitle}
           </p>
-        </div>
+        </Container>
       </div>
- <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
-        <div className="space-y-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-lg sm:p-8">
+ <Container size="md" className="py-8 sm:py-12">
+        <Card className="space-y-8" padding="md">
           {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
               {error}
             </div>
           )}
 
           <div>
-            <h2 className="mb-2 text-lg font-bold text-gray-900">{t.appointments.book.countryLabel}</h2>
+            <h2 className="mb-2 text-lg font-bold text-[#0B3948]">{t.appointments.book.countryLabel}</h2>
 
             <select
               value={country}
               onChange={(e) => setCountry(e.target.value)}
-              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base font-medium text-gray-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+              className="ui-input text-base font-medium"
             >
               <option value="">{t.appointments.book.countryPlaceholder}</option>
               {COUNTRIES.map((c) => (
@@ -418,12 +421,12 @@ const file = await uploadPassport()
           </div>
 
           <div>
-            <h2 className="mb-2 text-lg font-bold text-gray-900">{t.appointments.book.visaTypeLabel}</h2>
+            <h2 className="mb-2 text-lg font-bold text-[#0B3948]">{t.appointments.book.visaTypeLabel}</h2>
 
             <select
               value={visaType}
               onChange={(e) => setVisaType(e.target.value)}
-              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base font-medium text-gray-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+              className="ui-input text-base font-medium"
             >
               <option value="">{t.appointments.book.visaTypePlaceholder}</option>
               {VISA_TYPES.map((v) => (
@@ -435,14 +438,14 @@ const file = await uploadPassport()
           </div>
 
           <div>
-            <h2 className="mb-2 text-lg font-bold text-gray-900">
+            <h2 className="mb-2 text-lg font-bold text-[#0B3948]">
               {t.appointments.book.monthLabel}
             </h2>
 
             <select
               value={month}
               onChange={(e) => setMonth(e.target.value)}
-              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base font-medium text-gray-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+              className="ui-input text-base font-medium"
             >
               <option value="">{t.appointments.book.monthPlaceholder}</option>
               {months.map((m) => (
@@ -453,19 +456,19 @@ const file = await uploadPassport()
             </select>
           </div>
 
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-            <h3 className="mb-2 text-lg font-bold text-emerald-800">
+          <div className="rounded-2xl border border-[#BFEFD8] bg-[#F1FFF8] p-4">
+            <h3 className="mb-2 text-lg font-bold text-[#00B863]">
               {t.appointments.book.remainingSlots.replace('{country}', country ? `for ${country}` : '')}
             </h3>
 
             {!country || !month ? (
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-[#355865]">
                 {t.appointments.book.selectToViewSlots}
               </p>
             ) : quotaLoading ? (
-              <p className="text-sm text-gray-700">{t.appointments.book.loadingSlots}</p>
+              <p className="text-sm text-[#355865]">{t.appointments.book.loadingSlots}</p>
             ) : quotaInfo ? (
-              <div className="space-y-1 text-sm text-gray-800">
+              <div className="space-y-1 text-sm text-[#355865]">
                 <p>
                   {t.appointments.book.quotaLabels.priorityUsed.replace('{used}', quotaInfo.priority_slots_used.toString())}
                 </p>
@@ -486,37 +489,37 @@ const file = await uploadPassport()
                 </p>
               </div>
             ) : (
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-[#355865]">
                 {t.appointments.book.unableLoadSlots}
               </p>
             )}
           </div>
 
           <div>
-            <h2 className="mb-3 text-lg font-bold text-gray-900">
+            <h2 className="mb-3 text-lg font-bold text-[#0B3948]">
               {t.appointments.book.passportLabel}
             </h2>
 
             <label className="block cursor-pointer">
-              <div className="rounded-xl border-2 border-dashed border-gray-300 p-6 text-center transition hover:border-emerald-500 sm:p-10">
+              <div className="rounded-2xl border-2 border-dashed border-[#DDEAE5] p-6 text-center transition hover:border-[#00D474] sm:p-10">
                 {passport ? (
                   <div>
                     <CheckCircle
-                      className="mx-auto mb-3 text-emerald-600"
+                      className="mx-auto mb-3 text-[#00B863]"
                       size={40}
                     />
-                    <p className="break-all text-sm font-semibold text-gray-800 sm:text-base">
+                    <p className="break-all text-sm font-semibold text-[#0B3948] sm:text-base">
                       {passport.name}
                     </p>
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-[#6D8790]">
                       {(passport.size / 1024).toFixed(1)} KB
                     </p>
                   </div>
                 ) : (
                   <div>
-                    <Upload className="mx-auto mb-3 text-gray-400" size={40} />
-                    <p className="font-medium text-gray-700">{t.appointments.book.passportUpload}</p>
-                    <p className="text-sm text-gray-500">{t.appointments.book.passportFormat}</p>
+                    <Upload className="mx-auto mb-3 text-[#90A8AF]" size={40} />
+                    <p className="font-medium text-[#355865]">{t.appointments.book.passportUpload}</p>
+                    <p className="text-sm text-[#6D8790]">{t.appointments.book.passportFormat}</p>
                   </div>
                 )}
               </div>
@@ -545,7 +548,7 @@ const file = await uploadPassport()
       }
     } catch (err: any) {
       setPassportValid(false)
-      setError(err.message)
+      setError(t.appointments.book.errors.verificationFailed)
     } finally {
       setVerifying(false)
     }
@@ -553,33 +556,34 @@ const file = await uploadPassport()
 />
             </label>
             {verifying && (
-  <p className="mt-3 text-sm text-blue-600">
+  <p className="mt-3 text-sm text-[#0E7490]">
     {t.appointments.book.verification.verifying}
   </p>
 )}
 
 {passportValid === true && (
-  <p className="mt-3 text-sm text-green-600 font-semibold">
+  <p className="mt-3 text-sm font-semibold text-[#00B863]">
     {t.appointments.book.verification.verified}
   </p>
 )}
 
 {passportValid === false && (
-  <p className="mt-3 text-sm text-red-600 font-semibold">
+  <p className="mt-3 text-sm font-semibold text-red-600">
     {t.appointments.book.verification.invalid}
   </p>
 )}
           </div>
 
-          <button
-  onClick={submit}
-  disabled={loading || verifying || passportValid === false}
-            className="w-full rounded-xl bg-emerald-600 py-4 text-base font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+          <Button
+            onClick={submit}
+            disabled={loading || verifying || passportValid === false}
+            fullWidth
+            size="lg"
           >
             {loading ? t.appointments.book.buttons.submitting : t.appointments.book.buttons.submit}
-          </button>
-        </div>
-      </div>
+          </Button>
+        </Card>
+      </Container>
     </div>
   )
 }

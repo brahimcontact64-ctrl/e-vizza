@@ -9,17 +9,15 @@ export default function Input({ label, error, className = '', ...props }: InputP
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-semibold text-text-primary mb-2">
+        <label className="ui-label">
           {label}
         </label>
       )}
       <input
-        className={`w-full px-4 py-3 rounded-lg border-2 ${
-          error ? 'border-red-500' : 'border-gray-300'
-        } focus:outline-none focus:border-primary transition-colors ${className}`}
+        className={`ui-input ${error ? 'border-red-300 focus:border-red-500 focus:shadow-[0_0_0_4px_rgba(239,68,68,0.14)]' : ''} ${className}`}
         {...props}
       />
-      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+      {error && <p className="mt-2 text-sm font-medium text-red-600">{error}</p>}
     </div>
   );
 }

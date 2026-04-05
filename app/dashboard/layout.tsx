@@ -30,8 +30,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-[#00B863]"></div>
       </div>
     );
   }
@@ -57,19 +57,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="flex min-h-screen flex-col bg-background">
 
-      <nav className="bg-white border-b border-gray-200">
+      <nav className="border-b border-[#DDEAE5] bg-white">
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           <div className="flex justify-between h-16 items-center">
 
             <Link href="/" className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-[#00D474] to-[#00B863]">
                 <span className="text-white font-bold">eV</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">
+              <span className="text-xl font-bold text-[#0B3948]">
                 e-Vizza
               </span>
             </Link>
@@ -87,8 +87,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     href={item.href}
                     className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition
                       ${active
-                        ? 'bg-emerald-50 text-emerald-600'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-[#E8FFF4] text-[#00B863]'
+                        : 'text-[#355865] hover:bg-[#F1F7F5]'
                       }`}
                   >
                     <Icon size={18} className="mr-2" />
@@ -100,7 +100,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
               <button
                 onClick={handleSignOut}
-                className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg ml-2"
+                className="ml-2 flex items-center rounded-lg px-4 py-2 text-sm font-medium text-[#355865] hover:bg-[#F1F7F5]"
               >
                 <LogOut size={18} className="mr-2" />
                 {t.nav.signOut}
@@ -111,7 +111,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="md:hidden">
               <button
                 onClick={handleSignOut}
-                className="p-2 rounded-lg hover:bg-gray-100"
+                className="rounded-lg p-2 hover:bg-[#F1F7F5]"
               >
                 <LogOut size={20} />
               </button>
@@ -123,7 +123,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       </nav>
 
-      <div className="md:hidden bg-white border-b border-gray-200">
+      <div className="border-b border-[#DDEAE5] bg-white md:hidden">
         <div className="flex justify-around">
 
           {navigation.map((item) => {
@@ -136,7 +136,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 key={item.name}
                 href={item.href}
                 className={`flex flex-col items-center py-3 text-xs font-medium transition
-                  ${active ? 'text-emerald-600' : 'text-gray-600'}`}
+                  ${active ? 'text-[#00B863]' : 'text-[#5F7B84]'}`}
               >
                 <Icon size={20} className="mb-1" />
                 {item.name}

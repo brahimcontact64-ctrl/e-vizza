@@ -7,6 +7,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { ArrowLeft, Upload, FileText, CircleCheck as CheckCircle, Loader as Loader2, Calendar } from 'lucide-react';
 import Navbar from '@/components/Navbar';
+import Button from '@/components/Button';
+import Card from '@/components/Card';
+import Container from '@/components/Container';
 
 interface Visa {
   id: string;
@@ -136,22 +139,22 @@ const verifyPassport = async (file: File) => {
 
     const data = await res.json();
 
-    if (!res.ok) throw new Error(data.error || 'Verification failed');
+    if (!res.ok) throw new Error(data.error || t.apply.errors.verificationFailed);
 
     return data;
   } catch (e: any) {
-    throw new Error(e.message || 'Passport verification failed');
+    throw new Error(e.message || t.apply.errors.verificationFailed);
   }
 };
 
 const handleFileUpload = async (type: string, file: File) => {
   if (file.size > 10 * 1024 * 1024) {
-    alert('File size must be less than 10MB');
+    alert(t.apply.documents.fileSizeLimit);
     return;
   }
 
   if (type.toLowerCase().includes('passport') && passportValid === true) {
-  alert('Passport already exists in your account ✅');
+  alert(t.apply.documents.passportSaved);
   return;
 }
   if (type.toLowerCase().includes('passport')) {
@@ -163,7 +166,7 @@ const handleFileUpload = async (type: string, file: File) => {
 
       if (!res.isPassport) {
         setPassportValid(false);
-        alert('Invalid passport document ❌');
+        alert(t.apply.documents.invalid);
         setVerifying(false);
         return;
       }
@@ -182,7 +185,7 @@ if (session?.user?.id) {
 }
     } catch (err: any) {
       setPassportValid(false);
-      alert(err.message);
+      alert(t.apply.errors.verificationFailed);
       setVerifying(false);
       return;
     }
@@ -236,7 +239,7 @@ if (session?.user?.id) {
    const { data: { session: currentSession } } = await supabase.auth.getSession();
 
 if (!currentSession) {
-  alert("Session expired. Please login again.");
+  alert(t.apply.errors.sessionExpired);
  router.push(`/auth/login?redirect=${encodeURIComponent(`/apply/new?visa_id=${visaId}`)}`);
   return;
 }
@@ -251,18 +254,18 @@ const { data: passportData } = await supabase
 
     if (!currentSession?.user) {
       console.error('Session exists but no user found');
-      alert('Session expired. Please login again.');
+      alert(t.apply.errors.sessionExpired);
       router.push(`/auth/login?redirect=${encodeURIComponent(`/apply/new?visa_id=${visaId}`)}`);
       return;
     }
 
     if (!visa) {
-      alert('Visa information not found. Please try again.');
+      alert(t.apply.errors.visaNotFound);
       return;
     }
 
     if (!entryDate || !exitDate) {
-      alert('Please select entry and exit dates');
+      alert(t.apply.errors.selectTravelDates);
       return;
     }
 
@@ -277,7 +280,7 @@ const uploadedNonPassportDocs = documents.filter(
 );
 
 if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
-  alert('Please upload required documents');
+  alert(t.apply.errors.uploadRequiredDocuments);
   return;
 }
 
@@ -352,7 +355,7 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
      router.replace('/dashboard/applications?success=true');
     } catch (error: any) {
       console.error('Error submitting application:', error);
-      alert(error.message || 'Failed to submit application. Please try again.');
+      alert(t.apply.errors.submitFailed);
     } finally {
       setLoading(false);
     }
@@ -360,8 +363,8 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
 
   if (authLoading || !visa) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="animate-spin text-teal-600" size={48} />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="animate-spin text-[#00B863]" size={48} />
       </div>
     );
   }
@@ -371,15 +374,15 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <Container size="md" className="py-8">
         <button
           onClick={() => step === 1 ? router.push(`/destinations/${visa.id}`) : setStep(step - 1)}
-          className="flex items-center text-gray-600 hover:text-teal-600 mb-6 transition"
+          className="mb-6 flex items-center text-[#5F7B84] transition hover:text-[#00B863]"
         >
-          <ArrowLeft size={20} className="mr-2" />
+          <ArrowLeft size={20} className={`mr-2 ${isRTL ? 'rotate-180' : ''}`} />
           {t.apply.navigation.back}
         </button>
 
@@ -387,8 +390,8 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
           <div className="flex items-center gap-4 mb-6">
             <span className="text-6xl">{getCountryFlag(visa.country_code)}</span>
             <div>
-              <h1 className="text-4xl font-bold text-gray-900">{t.apply.title}</h1>
-              <p className="text-xl text-gray-600 mt-1">{visa.country_name} - {visa.visa_type}</p>
+              <h1 className="text-4xl font-bold text-[#0B3948]">{t.apply.title}</h1>
+              <p className="mt-1 text-xl text-[#5F7B84]">{visa.country_name} - {visa.visa_type}</p>
             </div>
           </div>
 
@@ -396,28 +399,28 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
             {[1, 2, 3].map((s) => (
               <div key={s} className="flex items-center">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center transition ${
-                  s <= step ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-500'
+                  s <= step ? 'bg-[#00B863] text-white' : 'bg-[#E4EFEB] text-[#7C969F]'
                 }`}>
                   {s < step ? <CheckCircle size={20} /> : s}
                 </div>
-                {s < 3 && <div className={`w-20 h-1 transition ${s < step ? 'bg-teal-600' : 'bg-gray-200'}`} />}
+                {s < 3 && <div className={`w-20 h-1 transition ${s < step ? 'bg-[#00B863]' : 'bg-[#E4EFEB]'}`} />}
               </div>
             ))}
           </div>
           <div className="flex justify-between mt-3 text-sm font-medium">
-            <span className={step >= 1 ? 'text-teal-600' : 'text-gray-500'}>{t.apply.steps.step1}</span>
-            <span className={step >= 2 ? 'text-teal-600' : 'text-gray-500'}>{t.apply.steps.step2}</span>
-            <span className={step >= 3 ? 'text-teal-600' : 'text-gray-500'}>{t.apply.steps.step3}</span>
+            <span className={step >= 1 ? 'text-[#00B863]' : 'text-[#7C969F]'}>{t.apply.steps.step1}</span>
+            <span className={step >= 2 ? 'text-[#00B863]' : 'text-[#7C969F]'}>{t.apply.steps.step2}</span>
+            <span className={step >= 3 ? 'text-[#00B863]' : 'text-[#7C969F]'}>{t.apply.steps.step3}</span>
           </div>
         </div>
 
         {step === 1 && (
-          <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">{t.apply.travelDates.title}</h2>
+          <Card>
+            <h2 className="mb-6 text-2xl font-bold text-[#0B3948]">{t.apply.travelDates.title}</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-semibold text-[#355865]">
                   <Calendar size={16} className="inline mr-2" />
                   {t.apply.travelDates.entryLabel}
                 </label>
@@ -426,12 +429,12 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
                   value={entryDate}
                   onChange={(e) => setEntryDate(e.target.value)}
                   min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="ui-input"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-semibold text-[#355865]">
                   <Calendar size={16} className="inline mr-2" />
                   {t.apply.travelDates.exitLabel}
                 </label>
@@ -440,37 +443,38 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
                   value={exitDate}
                   onChange={(e) => setExitDate(e.target.value)}
                   min={entryDate || new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="ui-input"
                   required
                 />
               </div>
             </div>
 
-            <div className="bg-teal-50 border border-teal-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-teal-900">
+            <div className="mb-6 rounded-2xl border border-[#BFEFD8] bg-[#F1FFF8] p-4">
+              <p className="text-sm text-[#0E5167]">
                 <strong>{t.apply.travelDates.note}</strong> {t.apply.travelDates.noteText.replace('{processing_time}', visa.processing_time)}
               </p>
             </div>
 
-            <button
+            <Button
               onClick={() => setStep(2)}
               disabled={!entryDate || !exitDate}
-              className="w-full bg-teal-600 text-white py-4 rounded-lg font-semibold text-lg hover:bg-teal-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              fullWidth
+              size="lg"
             >
               {t.apply.travelDates.continueButton}
-            </button>
-          </div>
+            </Button>
+          </Card>
         )}
 
         {step === 2 && (
-          <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">{t.apply.documents.title}</h2>
+          <Card>
+            <h2 className="mb-2 text-2xl font-bold text-[#0B3948]">{t.apply.documents.title}</h2>
             {passportValid === true && (
  <div className="bg-green-100 border border-green-400 p-3 rounded mb-4 text-green-800 font-medium">
   {t.apply.documents.passportSaved}
 </div>
 )}
-           <p className="text-gray-700 mb-6">
+           <p className="mb-6 text-[#355865]">
   {passportValid === true
     ? t.apply.documents.passportSavedDesc
     : t.apply.documents.defaultDesc}
@@ -485,11 +489,11 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
 
   const uploadedDoc = documents.find(d => d.type === docType);
                 return (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4 hover:border-teal-300 transition">
+                  <div key={index} className="rounded-2xl border border-[#DDEAE5] p-4 transition hover:border-[#00D474]">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <FileText size={20} className="text-teal-600 mr-3" />
-                        <span className="font-medium text-gray-900">{docType}</span>
+                        <FileText size={20} className="mr-3 text-[#00B863]" />
+                        <span className="font-medium text-[#0B3948]">{docType}</span>
                       </div>
       {isAutoPassport ? (
   <div className="flex items-center gap-2">
@@ -510,7 +514,7 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
   
                         </div>
                       ) : (
-                        <label className="cursor-pointer bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition flex items-center">
+                        <label className="flex cursor-pointer items-center rounded-2xl bg-gradient-to-r from-[#00D474] to-[#00B863] px-4 py-2 text-white transition">
                           <Upload size={16} className="mr-2" />
                           {t.apply.documents.uploadButton}
                           <input
@@ -526,7 +530,7 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
                       )}
                     </div>
             {(uploadedDoc || isAutoPassport) && (
-  <div className="mt-2 text-sm text-gray-600 ml-8">
+  <div className="ml-8 mt-2 text-sm text-[#5F7B84]">
     
     {isAutoPassport ? (
       <p className="text-green-600">
@@ -570,70 +574,71 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
             </div>
 
             <div className="flex gap-4">
-              <button
+              <Button
                 onClick={() => setStep(1)}
-                className="flex-1 border-2 border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition"
+                variant="secondary"
+                className="flex-1"
               >
                 {t.apply.documents.backButton}
-              </button>
-              <button
+              </Button>
+              <Button
                onClick={() => setStep(3)}
 disabled={
   (documents.length === 0 && passportValid !== true) ||
   passportValid === false ||
   verifying
 }
-                className="flex-1 bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1"
               >
                 {t.apply.documents.continueButton}
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         )}
 
         {step === 3 && (
-          <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">{t.apply.review.title}</h2>
+          <Card>
+            <h2 className="mb-6 text-2xl font-bold text-[#0B3948]">{t.apply.review.title}</h2>
 
             <div className="space-y-4 mb-8">
               <div className="flex items-center justify-between py-3 border-b border-gray-200">
-                <span className="text-gray-600 font-medium">{t.apply.review.destination}</span>
-                <span className="font-semibold text-gray-900">{visa.country_name}</span>
+                <span className="font-medium text-[#5F7B84]">{t.apply.review.destination}</span>
+                <span className="font-semibold text-[#0B3948]">{visa.country_name}</span>
               </div>
               <div className="flex items-center justify-between py-3 border-b border-gray-200">
-                <span className="text-gray-600 font-medium">{t.apply.review.visaType}</span>
-                <span className="font-semibold text-gray-900">{visa.visa_type}</span>
+                <span className="font-medium text-[#5F7B84]">{t.apply.review.visaType}</span>
+                <span className="font-semibold text-[#0B3948]">{visa.visa_type}</span>
               </div>
               <div className="flex items-center justify-between py-3 border-b border-gray-200">
-                <span className="text-gray-600 font-medium">{t.apply.review.processingTime}</span>
-                <span className="font-semibold text-gray-900">{visa.processing_time}</span>
+                <span className="font-medium text-[#5F7B84]">{t.apply.review.processingTime}</span>
+                <span className="font-semibold text-[#0B3948]">{visa.processing_time}</span>
               </div>
               <div className="flex items-center justify-between py-3 border-b border-gray-200">
-                <span className="text-gray-600 font-medium">{t.apply.review.entryDate}</span>
-                <span className="font-semibold text-gray-900">{new Date(entryDate).toLocaleDateString()}</span>
+                <span className="font-medium text-[#5F7B84]">{t.apply.review.entryDate}</span>
+                <span className="font-semibold text-[#0B3948]">{new Date(entryDate).toLocaleDateString()}</span>
               </div>
               <div className="flex items-center justify-between py-3 border-b border-gray-200">
-                <span className="text-gray-600 font-medium">{t.apply.review.exitDate}</span>
-                <span className="font-semibold text-gray-900">{new Date(exitDate).toLocaleDateString()}</span>
+                <span className="font-medium text-[#5F7B84]">{t.apply.review.exitDate}</span>
+                <span className="font-semibold text-[#0B3948]">{new Date(exitDate).toLocaleDateString()}</span>
               </div>
               <div className="flex items-center justify-between py-3">
-                <span className="text-gray-600 font-medium">{t.apply.review.totalPrice}</span>
-                <span className="font-bold text-teal-600 text-3xl">€{visa.total_price}</span>
+                <span className="font-medium text-[#5F7B84]">{t.apply.review.totalPrice}</span>
+                <span className="text-3xl font-bold text-[#00B863]">€{visa.total_price}</span>
               </div>
             </div>
 
-            <div className="mb-8 bg-gray-50 rounded-lg p-6">
-              <h3 className="font-semibold text-lg text-gray-900 mb-4">{t.apply.review.uploadedDocuments.replace('{count}', (documents.length + (passportValid === true ? 1 : 0)).toString())}</h3>
+            <div className="mb-8 rounded-2xl bg-[#F7FBFA] p-6">
+              <h3 className="mb-4 text-lg font-semibold text-[#0B3948]">{t.apply.review.uploadedDocuments.replace('{count}', (documents.length + (passportValid === true ? 1 : 0)).toString())}</h3>
              <div className="space-y-2">
   {documents.map((doc, idx) => (
-    <div key={idx} className="flex items-center text-sm text-gray-700">
+    <div key={idx} className="flex items-center text-sm text-[#355865]">
       <CheckCircle size={16} className="text-green-500 mr-2 flex-shrink-0" />
       <span>{doc.type}</span>
     </div>
   ))}
 
   {passportValid === true && (
-    <div className="flex items-center text-sm text-gray-700">
+    <div className="flex items-center text-sm text-[#355865]">
       <CheckCircle size={16} className="text-green-500 mr-2 flex-shrink-0" />
       <span>{t.apply.review.passportFromVault}</span>
     </div>
@@ -641,17 +646,20 @@ disabled={
 </div>
             </div>
             <div className="flex gap-4">
-              <button
+              <Button
                 onClick={() => setStep(2)}
                 disabled={loading}
-                className="flex-1 border-2 border-gray-300 text-gray-700 py-4 rounded-lg font-semibold hover:bg-gray-50 transition disabled:opacity-50"
+                variant="secondary"
+                size="lg"
+                className="flex-1"
               >
                 {t.apply.review.backButton}
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleSubmit}
                 disabled={loading}
-                className="flex-1 bg-gradient-to-r from-teal-600 to-emerald-600 text-white py-4 rounded-lg font-bold text-lg hover:shadow-xl transition disabled:opacity-50"
+                size="lg"
+                className="flex-1"
               >
                 {loading ? (
                   <span className="flex items-center justify-center">
@@ -661,11 +669,11 @@ disabled={
                 ) : (
                   t.apply.review.submitButton
                 )}
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         )}
-      </div>
+      </Container>
     </div>
   );
 }

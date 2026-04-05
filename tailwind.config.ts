@@ -10,39 +10,44 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#2F7F6D',
-          light: '#E8F5F2',
-          dark: '#245F51',
+          DEFAULT: '#00D474',
+          light: '#E8FFF4',
+          dark: '#00B863',
         },
         secondary: {
-          DEFAULT: '#3D9A88',
+          DEFAULT: '#0B3948',
         },
         accent: {
-          DEFAULT: '#22C55E',
+          DEFAULT: '#FED488',
         },
         background: {
-          DEFAULT: '#F6F8F7',
-          light: '#F6F8F7',
-          dark: '#1F2937',
+          DEFAULT: '#F7FBFA',
+          light: '#FFFFFF',
+          dark: '#0B3948',
         },
         text: {
-          primary: '#1F2937',
-          secondary: '#6B7280',
+          primary: '#0B3948',
+          secondary: '#5F7B84',
+        },
+        border: {
+          DEFAULT: '#DDEAE5',
         },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
-        'sm': '8px',
-        'md': '12px',
-        'lg': '16px',
-        'xl': '20px',
+        'sm': '10px',
+        'md': '14px',
+        'lg': '18px',
+        'xl': '24px',
+        '2xl': '28px',
+        '3xl': '32px',
       },
       boxShadow: {
-        'card': '0 2px 8px rgba(0, 0, 0, 0.05)',
-        'card-hover': '0 4px 16px rgba(0, 0, 0, 0.1)',
-        'primary': '0 4px 12px rgba(47, 127, 109, 0.3)',
+        'card': '0 8px 30px rgba(11, 57, 72, 0.08)',
+        'card-hover': '0 16px 42px rgba(11, 57, 72, 0.14)',
+        'primary': '0 12px 30px rgba(0, 212, 116, 0.25)',
       },
     },
   },

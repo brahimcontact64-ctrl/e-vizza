@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import FloatingContact from "@/components/FloatingContact";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,15 +19,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl" suppressHydrationWarning>
+    <html lang="fr" dir="ltr" suppressHydrationWarning>
       <body className={`${inter.className} max-w-full overflow-x-hidden`}>
         <Script id="init-language-dir" strategy="beforeInteractive">
-          {`(function () { try { var lang = localStorage.getItem('lang') || localStorage.getItem('language') || 'ar'; document.documentElement.lang = lang; document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'; } catch (e) {} })();`}
+          {`(function () { try { var lang = localStorage.getItem('lang') || localStorage.getItem('language') || 'fr'; document.documentElement.lang = lang; document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'; } catch (e) {} })();`}
         </Script>
         <div className="max-w-full overflow-hidden">
           <LanguageProvider>
             <AuthProvider>
               {children}
+              <FloatingContact />
             </AuthProvider>
           </LanguageProvider>
         </div>

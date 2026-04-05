@@ -4,10 +4,14 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import Card from '@/components/Card';
+import Container from '@/components/Container';
+import Section from '@/components/Section';
+import Badge from '@/components/Badge';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { translateVisaType, translateEntries } from '@/lib/visaTranslations';
 import { supabase } from '@/lib/supabase';
-import { Clock, Search, MapPin } from 'lucide-react';
+import { Clock, Search } from 'lucide-react';
 
 interface Visa {
   id: string;
@@ -97,43 +101,43 @@ export default function DestinationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
-      <section className="bg-gradient-to-br from-teal-600 to-emerald-700 text-white py-20 px-4">
-        <div className="max-w-7xl mx-auto">
+      <section className="bg-gradient-to-br from-[#0B3948] to-[#0E5167] px-4 py-20 text-white">
+        <Container>
           <h1 className="text-5xl md:text-6xl font-bold mb-4">{t.destinations.title}</h1>
           <p className="text-xl text-white/95 mb-8">
             {t.destinations.subtitle.replace('{count}', visas.length.toString())}
           </p>
-        </div>
+        </Container>
       </section>
 
-      <section className="py-12 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8 mb-8 border border-gray-100">
+      <Section className="py-12">
+        <div>
+          <Card className="mb-8" padding="md">
             <div className="relative">
-              <Search className={`absolute top-1/2 -translate-y-1/2 text-gray-400 ${isRTL ? 'right-4' : 'left-4'}`} size={20} />
+              <Search className={`absolute top-1/2 -translate-y-1/2 text-[#6D8790] ${isRTL ? 'right-4' : 'left-4'}`} size={20} />
               <input
                 type="text"
                 placeholder={t.destinations.searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} py-4 text-base border border-gray-300 rounded-2xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-teal-500 focus:border-transparent`}
+                className={`ui-input ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} text-base placeholder-[#7C969F]`}
               />
             </div>
-          </div>
+          </Card>
 
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(9)].map((_, i) => (
-                <div key={i} className="bg-gray-200 rounded-2xl h-80 animate-pulse" />
+                <div key={i} className="h-80 animate-pulse rounded-3xl bg-[#E8F1EE]" />
               ))}
             </div>
           ) : filteredVisas.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-              <p className="text-gray-600 text-lg">{t.destinations.noResults}</p>
-            </div>
+            <Card className="text-center" padding="lg">
+              <p className="text-lg ui-muted">{t.destinations.noResults}</p>
+            </Card>
           ) : (
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -141,7 +145,7 @@ export default function DestinationsPage() {
                 <Link
                   key={visa.id}
                   href={`/destinations/${visa.id}`}
-                  className="bg-white rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group border border-gray-100"
+                  className="ui-card ui-card-hover group overflow-hidden p-0"
                 >
                   <div className="relative h-48 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10" />
@@ -165,43 +169,41 @@ export default function DestinationsPage() {
                   </div>
 
                   <div className="p-6 sm:p-7">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 pb-4 border-b border-gray-100 gap-3">
-                      <div className="flex items-center text-gray-600 gap-2">
-                        <Clock size={18} className="text-teal-600" />
+                    <div className="mb-4 flex flex-col justify-between gap-3 border-b border-[#E4EFEB] pb-4 sm:flex-row sm:items-center">
+                      <div className="flex items-center gap-2 text-[#5F7B84]">
+                        <Clock size={18} className="text-[#00B863]" />
                         <span className="text-sm font-medium">
                           {visa.processing_time}
                         </span>
                       </div>
-                      <div className="text-sm font-semibold text-teal-600">
-                        {translateEntries(visa.entries, language)}
-                      </div>
+                      <Badge tone="primary" className="text-sm">{translateEntries(visa.entries, language)}</Badge>
                     </div>
 
-                    <div className="space-y-3 mb-4 text-sm text-gray-600">
+                    <div className="mb-4 space-y-3 text-sm text-[#5F7B84]">
                       <div className="flex justify-between">
                         <span>{t.destinations.labels.validity}</span>
-                        <span className="font-medium text-gray-900">{visa.validity}</span>
+                        <span className="font-medium text-[#0B3948]">{visa.validity}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>{t.destinations.labels.maxStay}</span>
-                        <span className="font-medium text-gray-900">{visa.stay_duration}</span>
+                        <span className="font-medium text-[#0B3948]">{visa.stay_duration}</span>
                       </div>
                     </div>
 
-                    <div className="pt-4 border-t border-gray-100">
-                      <p className="text-gray-500 text-xs mb-2">{t.destinations.labels.price}</p>
+                    <div className="border-t border-[#E4EFEB] pt-4">
+                      <p className="mb-2 text-xs text-[#6D8790]">{t.destinations.labels.price}</p>
                       <div className="flex flex-col gap-1">
-                        <span className="text-2xl sm:text-3xl font-bold text-gray-900">
+                        <span className="text-2xl font-bold text-[#0B3948] sm:text-3xl">
                           {(visa.total_price * 260).toLocaleString()} {t.destinations.currency}
                         </span>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-[#6D8790]">
                           {t.destinations.currencyPrefix}{visa.total_price}
                         </span>
                       </div>
                     </div>
 
                     <div className="mt-6">
-                      <div className="bg-teal-600 text-white px-6 py-3 rounded-2xl font-semibold group-hover:bg-teal-700 transition-colors text-sm text-center">
+                      <div className="rounded-2xl bg-gradient-to-r from-[#00D474] to-[#00B863] px-6 py-3 text-center text-sm font-semibold text-white">
                         {t.destinations.applyNow}
                       </div>
                     </div>
@@ -211,22 +213,22 @@ export default function DestinationsPage() {
             </div>
           )}
         </div>
-      </section>
+      </Section>
 
-      <footer className="bg-gray-900 text-white py-16 px-4 mt-16">
-        <div className="max-w-7xl mx-auto">
+      <footer className="mt-16 bg-[#0B3948] px-4 py-16 text-white">
+        <Container>
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-3 mb-6 md:mb-0">
-              <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-xl flex items-center justify-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#00D474] to-[#00B863]">
                 <span className="text-white font-bold text-2xl">eV</span>
               </div>
               <span className="text-3xl font-bold">e-Vizza</span>
             </div>
             <div className="text-center md:text-right">
-              <p className="text-gray-400">{t.destinations.footer.rights.replace('{year}', new Date().getFullYear().toString())}</p>
+              <p className="text-white/70">{t.destinations.footer.rights.replace('{year}', new Date().getFullYear().toString())}</p>
             </div>
           </div>
-        </div>
+        </Container>
       </footer>
     </div>
   );

@@ -1,5 +1,17 @@
 export const translations = {
   en: {
+    common: {
+      submit: 'Submit',
+      cancel: 'Cancel',
+      loading: 'Loading...',
+      notAvailable: 'N/A',
+      user: 'user',
+      buttons: {
+        apply_now: 'Apply Now',
+        get_started: 'Get Started',
+        book_appointment: 'Book Appointment',
+      },
+    },
     nav: {
       home: 'Home',
       destinations: 'Destinations',
@@ -20,6 +32,7 @@ export const translations = {
       logout: 'Logout',
       login: 'Login',
       createAccount: 'Create Account',
+      toggleMenu: 'Toggle menu',
       languages: {
         english: 'English',
         french: 'Français',
@@ -27,6 +40,9 @@ export const translations = {
       },
     },
     home: {
+      form: {
+        originCountry: 'Algeria',
+      },
       hero: {
         title: 'Your Visa Journey Simplified',
         subtitle: 'Apply for eVisas online in minutes with our fast and secure platform',
@@ -57,6 +73,7 @@ export const translations = {
       features: {
         title: 'Why Choose e-Vizza?',
         subtitle: 'Experience the fastest and most reliable visa application platform',
+        detailsSubtitle: 'What makes e-Vizza different',
         fast: {
           title: 'Fast Processing',
           description: 'Get your visa in as fast as 24 hours',
@@ -70,9 +87,52 @@ export const translations = {
           description: 'Your documents are encrypted and protected',
         },
       },
+      whyUs: {
+        withoutTitle: 'Without e-Vizza',
+        withTitle: 'With e-Vizza',
+        withoutList: [
+          'Confusing and complex procedures',
+          'Risk of document rejection',
+          'No dedicated support',
+          'Repetitive manual process',
+          'Uncertain processing timeline',
+        ],
+        withList: [
+          'Streamlined and guided process',
+          'Expert document review included',
+          '24/7 support in your language',
+          'Automated and efficient handling',
+          'Real-time status updates',
+        ],
+      },
+      process: {
+        title: 'Simple 3-Step Process',
+        stepPrefix: 'Step',
+        step1Title: 'Choose Visa',
+        step1Desc: 'Select your destination and visa type',
+        step2Title: 'Submit Details',
+        step2Desc: 'Upload documents and complete your application',
+        step3Title: 'Get Approval',
+        step3Desc: 'We handle processing and keep you updated',
+      },
+      testimonials: {
+        title: 'Trusted by Thousands',
+        subtitle: 'Real travelers share their e-Vizza experience',
+        verifiedCustomer: 'Verified Customer',
+        travelerLabel: 'Algerian Traveler',
+      },
+      finalCta: {
+        title: 'Ready to Apply for Your Visa?',
+        subtitle: 'Start your application today and get approved faster with expert support',
+      },
       footer: {
         rights: '© {year} e-Vizza. All rights reserved.',
         partner: 'Your trusted visa application partner',
+        sections: {
+          company: 'Company',
+          services: 'Services',
+          home: 'Home',
+        },
       },
     },
     auth: {
@@ -85,6 +145,12 @@ export const translations = {
       noAccount: "Don't have an account?",
       haveAccount: 'Already have an account?',
       createAccount: 'Create Account',
+      divider: 'or',
+      google: {
+        button: 'Continue with Google',
+        loading: 'Connecting...',
+        failed: 'Google sign in failed. Please try again.',
+      },
       login: {
         title: 'Welcome Back',
         subtitle: 'Sign in to your account',
@@ -186,6 +252,9 @@ export const translations = {
           registrationClosed: 'Bookings are only open from day 1 to day 15 each month.',
           slotsFull: 'All 15 slots for {country} in {month} are already taken.',
           invalidPassport: 'Invalid passport document. Please upload a real passport.',
+          invalidMonth: 'Invalid appointment month.',
+          verificationFailed: 'Passport verification failed.',
+          uploadFailed: 'Failed to upload passport file.',
         },
       },
       success: {
@@ -276,6 +345,7 @@ export const translations = {
       },
       documents: {
         title: 'Upload Required Documents',
+        fileSizeLimit: 'File size must be less than 10MB',
         passportSaved: 'Passport already saved and valid ✅',
         passportSavedDesc: 'Your passport is already saved. Please upload remaining documents.',
         defaultDesc: 'Please upload all required documents for your visa application',
@@ -304,6 +374,13 @@ export const translations = {
       },
       navigation: {
         back: 'Back',
+      },
+      errors: {
+        sessionExpired: 'Session expired. Please sign in again.',
+        visaNotFound: 'Visa information not found. Please try again.',
+        selectTravelDates: 'Please select entry and exit dates.',
+        uploadRequiredDocuments: 'Please upload all required documents.',
+        submitFailed: 'Failed to submit application. Please try again.',
       },
     },
     dashboard: {
@@ -377,6 +454,18 @@ export const translations = {
     },
   },
   fr: {
+    common: {
+      submit: 'Soumettre',
+      cancel: 'Annuler',
+      loading: 'Chargement...',
+      notAvailable: 'N/A',
+      user: 'utilisateur',
+      buttons: {
+        apply_now: 'Postuler Maintenant',
+        get_started: 'Commencer',
+        book_appointment: 'Réserver un Rendez-vous',
+      },
+    },
     nav: {
       home: 'Accueil',
       destinations: 'Destinations',
@@ -397,6 +486,7 @@ export const translations = {
       logout: 'Déconnexion',
       login: 'Connexion',
       createAccount: 'Créer un Compte',
+      toggleMenu: 'Basculer le menu',
       languages: {
         english: 'Anglais',
         french: 'Français',
@@ -404,6 +494,9 @@ export const translations = {
       },
     },
     home: {
+      form: {
+        originCountry: 'Algérie',
+      },
       hero: {
         title: 'Votre Parcours Visa Simplifié',
         subtitle: 'Demandez des eVisas en ligne en quelques minutes',
@@ -434,6 +527,7 @@ export const translations = {
       features: {
         title: 'Pourquoi Choisir e-Vizza?',
         subtitle: 'Découvrez la plateforme de demande de visa la plus rapide et la plus fiable',
+        detailsSubtitle: 'Ce qui rend e-Vizza différente',
         fast: {
           title: 'Traitement Rapide',
           description: 'Obtenez votre visa en 24 heures',
@@ -447,9 +541,52 @@ export const translations = {
           description: 'Vos documents sont protégés',
         },
       },
+      whyUs: {
+        withoutTitle: 'Sans e-Vizza',
+        withTitle: 'Avec e-Vizza',
+        withoutList: [
+          'Procédures complexes et peu claires',
+          'Risque de rejet des documents',
+          'Absence d\'accompagnement dédié',
+          'Démarches manuelles répétitives',
+          'Délais de traitement incertains',
+        ],
+        withList: [
+          'Processus simple et guidé',
+          'Vérification experte des documents',
+          'Support 24h/24 dans votre langue',
+          'Traitement rapide et automatisé',
+          'Suivi en temps réel de votre dossier',
+        ],
+      },
+      process: {
+        title: 'Processus simple en 3 étapes',
+        stepPrefix: 'Étape',
+        step1Title: 'Choisir le visa',
+        step1Desc: 'Sélectionnez votre destination et votre type de visa',
+        step2Title: 'Soumettre les informations',
+        step2Desc: 'Téléchargez vos documents et complétez la demande',
+        step3Title: 'Obtenir l\'approbation',
+        step3Desc: 'Nous gérons le traitement et le suivi pour vous',
+      },
+      testimonials: {
+        title: 'Ils nous font confiance',
+        subtitle: 'Des voyageurs réels partagent leur expérience avec e-Vizza',
+        verifiedCustomer: 'Client Vérifié',
+        travelerLabel: 'Voyageur Algérien',
+      },
+      finalCta: {
+        title: 'Prêt à demander votre visa ?',
+        subtitle: 'Lancez votre demande dès aujourd\'hui avec l\'accompagnement de nos experts',
+      },
       footer: {
         rights: '© {year} e-Vizza. Tous droits réservés.',
         partner: 'Votre partenaire de confiance pour les demandes de visa',
+        sections: {
+          company: 'Entreprise',
+          services: 'Services',
+          home: 'Accueil',
+        },
       },
     },
     auth: {
@@ -462,6 +599,12 @@ export const translations = {
       noAccount: 'Pas de compte?',
       haveAccount: 'Déjà un compte?',
       createAccount: 'Créer un Compte',
+      divider: 'ou',
+      google: {
+        button: 'Continuer avec Google',
+        loading: 'Connexion...',
+        failed: 'Échec de la connexion Google. Veuillez réessayer.',
+      },
       login: {
         title: 'Bienvenue',
         subtitle: 'Connectez-vous à votre compte',
@@ -563,6 +706,9 @@ export const translations = {
           registrationClosed: 'Les réservations ne sont ouvertes que du 1er au 15 de chaque mois.',
           slotsFull: 'Les 15 emplacements pour {country} en {month} sont déjà pris.',
           invalidPassport: 'Document de passeport invalide. Veuillez télécharger un vrai passeport.',
+          invalidMonth: 'Mois de rendez-vous invalide.',
+          verificationFailed: 'Échec de la vérification du passeport.',
+          uploadFailed: 'Échec du téléchargement du passeport.',
         },
       },
       success: {
@@ -653,6 +799,7 @@ export const translations = {
       },
       documents: {
         title: 'Télécharger les Documents Requis',
+        fileSizeLimit: 'La taille du fichier doit être inférieure à 10 Mo',
         passportSaved: 'Passeport déjà enregistré et valide ✅',
         passportSavedDesc: 'Votre passeport est déjà enregistré. Veuillez télécharger les documents restants.',
         defaultDesc: 'Veuillez télécharger tous les documents requis pour votre demande de visa',
@@ -674,13 +821,20 @@ export const translations = {
         exitDate: 'Date de Sortie',
         totalPrice: 'Prix Total',
         uploadedDocuments: 'Documents Téléchargés ({count})',
-        passportFromVault: 'Passeport (de la coffre-fort)',
+        passportFromVault: 'Passeport (depuis le coffre-fort)',
         backButton: 'Retour',
         submitButton: 'Soumettre la Demande',
         submitting: 'Soumission...',
       },
       navigation: {
         back: 'Retour',
+      },
+      errors: {
+        sessionExpired: 'Session expirée. Veuillez vous reconnecter.',
+        visaNotFound: 'Informations de visa introuvables. Veuillez réessayer.',
+        selectTravelDates: 'Veuillez sélectionner les dates d\'entrée et de sortie.',
+        uploadRequiredDocuments: 'Veuillez télécharger tous les documents requis.',
+        submitFailed: 'Échec de l\'envoi de la demande. Veuillez réessayer.',
       },
     },
     dashboard: {
@@ -754,6 +908,18 @@ export const translations = {
     },
   },
   ar: {
+    common: {
+      submit: 'إرسال',
+      cancel: 'إلغاء',
+      loading: 'جاري التحميل...',
+      notAvailable: 'غير متاح',
+      user: 'مستخدم',
+      buttons: {
+        apply_now: 'قدّم الآن',
+        get_started: 'ابدأ الآن',
+        book_appointment: 'احجز موعدًا',
+      },
+    },
     nav: {
       home: 'الرئيسية',
       destinations: 'الوجهات',
@@ -774,6 +940,7 @@ export const translations = {
       logout: 'تسجيل الخروج',
       login: 'تسجيل الدخول',
       createAccount: 'إنشاء حساب',
+      toggleMenu: 'تبديل القائمة',
       languages: {
         english: 'الإنجليزية',
         french: 'الفرنسية',
@@ -781,8 +948,11 @@ export const translations = {
       },
     },
     home: {
+      form: {
+        originCountry: 'الجزائر',
+      },
       hero: {
-        title: 'رحلة التأشيرة المبسطة',
+        title: 'رحلة تأشيرتك أصبحت أسهل',
         subtitle: 'قدم طلب التأشيرة الإلكترونية في دقائق',
         cta: 'التقديم للحصول على تأشيرة',
       },
@@ -811,6 +981,7 @@ export const translations = {
       features: {
         title: 'لماذا تختار e-Vizza؟',
         subtitle: 'اكتشف أسرع منصة تقديم طلبات التأشيرة وأكثرها موثوقية',
+        detailsSubtitle: 'ما الذي يميز e-Vizza',
         fast: {
           title: 'معالجة سريعة',
           description: 'احصل على تأشيرتك في 24 ساعة',
@@ -824,9 +995,52 @@ export const translations = {
           description: 'مستنداتك مشفرة ومحمية',
         },
       },
+      whyUs: {
+        withoutTitle: 'بدون e-Vizza',
+        withTitle: 'مع e-Vizza',
+        withoutList: [
+          'إجراءات معقدة وغير واضحة',
+          'احتمال رفض المستندات',
+          'غياب الدعم المتخصص',
+          'خطوات يدوية متكررة',
+          'مدة معالجة غير مؤكدة',
+        ],
+        withList: [
+          'مسار واضح وموجّه خطوة بخطوة',
+          'مراجعة احترافية للمستندات',
+          'دعم على مدار الساعة بلغتك',
+          'تنفيذ أسرع وأكثر كفاءة',
+          'متابعة لحظية لحالة الطلب',
+        ],
+      },
+      process: {
+        title: '3 خطوات بسيطة',
+        stepPrefix: 'الخطوة',
+        step1Title: 'اختر التأشيرة',
+        step1Desc: 'حدّد الوجهة ونوع التأشيرة المناسب',
+        step2Title: 'أدخل بياناتك',
+        step2Desc: 'ارفع المستندات وأكمل الطلب',
+        step3Title: 'استلم الموافقة',
+        step3Desc: 'نتولى المعالجة ونبقيك على اطلاع',
+      },
+      testimonials: {
+        title: 'موثوق من آلاف المسافرين',
+        subtitle: 'تجارب حقيقية لمسافرين استخدموا e-Vizza',
+        verifiedCustomer: 'عميل موثّق',
+        travelerLabel: 'مسافر من الجزائر',
+      },
+      finalCta: {
+        title: 'جاهز لبدء طلب التأشيرة؟',
+        subtitle: 'ابدأ طلبك اليوم واحصل على متابعة احترافية حتى الموافقة',
+      },
       footer: {
         rights: '© {year} e-Vizza. جميع الحقوق محفوظة.',
         partner: 'شريكك الموثوق في طلبات التأشيرة',
+        sections: {
+          company: 'الشركة',
+          services: 'الخدمات',
+          home: 'الرئيسية',
+        },
       },
     },
     auth: {
@@ -839,6 +1053,12 @@ export const translations = {
       noAccount: 'ليس لديك حساب؟',
       haveAccount: 'لديك حساب؟',
       createAccount: 'إنشاء حساب',
+      divider: 'أو',
+      google: {
+        button: 'المتابعة با Google',
+        loading: 'جاري الاتصال...',
+        failed: 'فشل تسجيل الدخول بـ Google. يرجى المحاولة مجددًا.',
+      },
       login: {
         title: 'مرحبا بعودتك',
         subtitle: 'سجل الدخول إلى حسابك',
@@ -938,8 +1158,11 @@ export const translations = {
           sessionExpired: 'انتهت جلسة عملك. يرجى تسجيل الدخول مجددًا.',
           fillAllFields: 'يرجى ملء جميع الحقول',
           registrationClosed: 'الحجوزات مفتوحة فقط من اليوم الأول إلى اليوم الخامس عشر من كل شهر.',
-          slotsFull: 'تمتلئت جميع 15 فتحة لـ {country} في {month}.',
+          slotsFull: 'تم حجز جميع الفتحات الـ 15 لـ {country} في {month}.',
           invalidPassport: 'مستند جواز سفر غير صالح. يرجى تحميل جواز سفر حقيقي.',
+          invalidMonth: 'شهر الموعد غير صالح.',
+          verificationFailed: 'فشل التحقق من جواز السفر.',
+          uploadFailed: 'فشل رفع ملف جواز السفر.',
         },
       },
       success: {
@@ -1030,6 +1253,7 @@ export const translations = {
       },
       documents: {
         title: 'تحميل المستندات المطلوبة',
+        fileSizeLimit: 'يجب أن يكون حجم الملف أقل من 10 ميغابايت',
         passportSaved: 'جواز السفر محفوظ وصالح بالفعل ✅',
         passportSavedDesc: 'جواز سفرك محفوظ بالفعل. يرجى تحميل المستندات المتبقية.',
         defaultDesc: 'يرجى تحميل جميع المستندات المطلوبة لطلب التأشيرة الخاص بك',
@@ -1058,6 +1282,13 @@ export const translations = {
       },
       navigation: {
         back: 'رجوع',
+      },
+      errors: {
+        sessionExpired: 'انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.',
+        visaNotFound: 'تعذر العثور على معلومات التأشيرة. يرجى المحاولة مرة أخرى.',
+        selectTravelDates: 'يرجى تحديد تاريخ الدخول وتاريخ الخروج.',
+        uploadRequiredDocuments: 'يرجى رفع جميع المستندات المطلوبة.',
+        submitFailed: 'تعذر إرسال الطلب. يرجى المحاولة مرة أخرى.',
       },
     },
     dashboard: {

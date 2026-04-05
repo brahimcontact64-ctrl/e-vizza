@@ -9,6 +9,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { translateEntries, translateDescription, translateRequirement } from '@/lib/visaTranslations';
 import { supabase } from '@/lib/supabase';
 import Navbar from '@/components/Navbar';
+import Container from '@/components/Container';
+import Card from '@/components/Card';
+import Button from '@/components/Button';
 import { Clock, FileText, Calendar, ArrowLeft, CircleCheck as CheckCircle } from 'lucide-react';
 
 interface Visa {
@@ -92,36 +95,36 @@ export default function VisaDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="max-w-7xl mx-auto px-4 py-12">
+        <Container className="py-12">
           <div className="animate-pulse space-y-8">
-            <div className="h-96 bg-gray-200 rounded-2xl"></div>
-            <div className="h-64 bg-gray-200 rounded-2xl"></div>
+            <div className="h-96 rounded-3xl bg-[#E8F1EE]"></div>
+            <div className="h-64 rounded-3xl bg-[#E8F1EE]"></div>
           </div>
-        </div>
+        </Container>
       </div>
     );
   }
 
   if (!visa) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="max-w-7xl mx-auto px-4 py-12">
-          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-            <p className="text-gray-600 text-lg mb-6">{t.visaDetail.notFound}</p>
-            <Link href="/destinations" className="text-teal-600 hover:underline font-semibold">
+        <Container className="py-12">
+          <Card className="text-center" padding="lg">
+            <p className="mb-6 text-lg ui-muted">{t.visaDetail.notFound}</p>
+            <Link href="/destinations" className="font-semibold text-[#00B863] hover:underline">
               {t.visaDetail.backToDestinations}
             </Link>
-          </div>
-        </div>
+          </Card>
+        </Container>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
       <div className="relative h-80 sm:h-96 overflow-hidden">
@@ -136,8 +139,8 @@ export default function VisaDetailPage() {
         />
         <div className="absolute inset-0 z-20 flex items-end">
           <div className="max-w-7xl mx-auto px-4 pb-10 sm:pb-12 w-full">
-            <Link href="/destinations" className="inline-flex items-center text-white mb-6 hover:underline text-base sm:text-lg">
-              <ArrowLeft size={20} className="mr-2" />
+            <Link href="/destinations" className="mb-6 inline-flex items-center text-base text-white hover:underline sm:text-lg">
+              <ArrowLeft size={20} className={`mr-2 ${isRTL ? 'rotate-180' : ''}`} />
               {t.visaDetail.backToDestinations}
             </Link>
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
@@ -151,142 +154,139 @@ export default function VisaDetailPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-12">
+      <Container className="py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-            <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8 border border-gray-100">
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">{t.visaDetail.info.title}</h2>
+            <Card>
+              <h2 className="mb-6 text-3xl font-bold text-[#0B3948] sm:text-4xl">{t.visaDetail.info.title}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="flex gap-4 items-start">
-                  <Clock size={24} className="text-teal-600 mt-1" />
+                  <Clock size={24} className="mt-1 text-[#00B863]" />
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">{t.visaDetail.info.processingTime}</p>
-                    <p className="text-lg font-semibold text-gray-900">{visa.processing_time}</p>
+                    <p className="mb-1 text-sm ui-muted">{t.visaDetail.info.processingTime}</p>
+                    <p className="text-lg font-semibold text-[#0B3948]">{visa.processing_time}</p>
                   </div>
                 </div>
                 <div className="flex gap-4 items-start">
-                  <Calendar size={24} className="text-teal-600 mt-1" />
+                  <Calendar size={24} className="mt-1 text-[#00B863]" />
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">{t.visaDetail.info.validity}</p>
-                    <p className="text-lg font-semibold text-gray-900">{visa.validity}</p>
+                    <p className="mb-1 text-sm ui-muted">{t.visaDetail.info.validity}</p>
+                    <p className="text-lg font-semibold text-[#0B3948]">{visa.validity}</p>
                   </div>
                 </div>
                 <div className="flex gap-4 items-start">
-                  <Clock size={24} className="text-teal-600 mt-1" />
+                  <Clock size={24} className="mt-1 text-[#00B863]" />
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">{t.visaDetail.info.stayDuration}</p>
-                    <p className="text-lg font-semibold text-gray-900">{visa.stay_duration}</p>
+                    <p className="mb-1 text-sm ui-muted">{t.visaDetail.info.stayDuration}</p>
+                    <p className="text-lg font-semibold text-[#0B3948]">{visa.stay_duration}</p>
                   </div>
                 </div>
                 <div className="flex gap-4 items-start">
-                  <FileText size={24} className="text-teal-600 mt-1" />
+                  <FileText size={24} className="mt-1 text-[#00B863]" />
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">{t.visaDetail.info.entries}</p>
-                    <p className="text-lg font-semibold text-gray-900">{translateEntries(visa.entries, language)}</p>
+                    <p className="mb-1 text-sm ui-muted">{t.visaDetail.info.entries}</p>
+                    <p className="text-lg font-semibold text-[#0B3948]">{translateEntries(visa.entries, language)}</p>
                   </div>
                 </div>
               </div>
-            </div>
+            </Card>
 
             {visa.description && (
-              <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8 border border-gray-100">
-                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">{t.visaDetail.description}</h2>
-                <p className="text-gray-700 text-lg leading-relaxed">{translateDescription(visa.description, language)}</p>
-              </div>
+              <Card>
+                <h2 className="mb-6 text-3xl font-bold text-[#0B3948] sm:text-4xl">{t.visaDetail.description}</h2>
+                <p className="text-lg leading-relaxed text-[#355865]">{translateDescription(visa.description, language)}</p>
+              </Card>
             )}
 
-            <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8 border border-gray-100">
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">{t.visaDetail.requiredDocuments}</h2>
+            <Card>
+              <h2 className="mb-6 text-3xl font-bold text-[#0B3948] sm:text-4xl">{t.visaDetail.requiredDocuments}</h2>
               <ul className="space-y-4">
                 {visa.requirements.map((req, index) => (
                   <li key={index} className="flex items-start">
-                    <CheckCircle size={24} className="text-teal-600 mr-3 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700 text-lg">{translateRequirement(req, language)}</span>
+                    <CheckCircle size={24} className="mr-3 mt-0.5 flex-shrink-0 text-[#00B863]" />
+                    <span className="text-lg text-[#355865]">{translateRequirement(req, language)}</span>
                   </li>
                 ))}
               </ul>
-            </div>
+            </Card>
           </div>
 
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-3xl shadow-lg p-6 sm:p-8 border border-gray-100 lg:sticky lg:top-24">
+            <Card className="lg:sticky lg:top-24" padding="md">
               <div className="mb-8">
-                <p className="text-gray-600 text-sm mb-2">{t.visaDetail.pricing.totalPrice}</p>
+                <p className="mb-2 text-sm ui-muted">{t.visaDetail.pricing.totalPrice}</p>
                 <div className="flex flex-col gap-2">
                   <div className="flex flex-col">
 
   {/* Price in DZD */}
-  <span className="text-5xl font-bold text-gray-900">
+  <span className="text-5xl font-bold text-[#0B3948]">
     {(visa.total_price * 260).toLocaleString()} {t.visaDetail.pricing.currency}
   </span>
 
   {/* Price in EUR (small) */}
-  <span className="text-sm text-gray-500 mt-1">
+  <span className="mt-1 text-sm text-[#6D8790]">
     {t.visaDetail.pricing.currencyPrefix}{visa.total_price}
   </span>
 
 </div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+                <div className="mt-4 space-y-2 border-t border-[#E4EFEB] pt-4">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">{t.visaDetail.pricing.governmentFee}</span>
-                   <span className="font-medium text-gray-900">
+                    <span className="ui-muted">{t.visaDetail.pricing.governmentFee}</span>
+                   <span className="font-medium text-[#0B3948]">
   {(visa.government_fee * 260).toLocaleString()} {t.visaDetail.pricing.currency}
 </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">{t.visaDetail.pricing.serviceFee}</span>
-                 <span className="font-medium text-gray-900">
+                    <span className="ui-muted">{t.visaDetail.pricing.serviceFee}</span>
+                 <span className="font-medium text-[#0B3948]">
   {(visa.service_fee * 260).toLocaleString()} {t.visaDetail.pricing.currency}
 </span>
                   </div>
                 </div>
               </div>
 
-              <button
-                onClick={handleApply}
-                className="w-full bg-gradient-to-r from-teal-600 to-emerald-600 text-white py-4 rounded-2xl text-lg font-bold hover:shadow-xl hover:scale-105 transition-all duration-200"
-              >
+              <Button onClick={handleApply} size="lg" fullWidth>
                 {t.visaDetail.applyNow}
-              </button>
+              </Button>
 
               {!session && (
-                <p className="text-center text-sm text-gray-600 mt-4">
+                <p className="mt-4 text-center text-sm ui-muted">
                   {t.visaDetail.signInMessage}
                 </p>
               )}
 
-              <div className="mt-8 pt-8 border-t border-gray-200">
-                <h3 className="font-bold text-gray-900 mb-4">{t.visaDetail.help.title}</h3>
-                <p className="text-gray-600 text-sm mb-4">
+              <div className="mt-8 border-t border-[#E4EFEB] pt-8">
+                <h3 className="mb-4 font-bold text-[#0B3948]">{t.visaDetail.help.title}</h3>
+                <p className="mb-4 text-sm ui-muted">
                   {t.visaDetail.help.description}
                 </p>
                 <Link
                   href="/appointments/book"
-                  className="block w-full border-2 border-teal-600 text-teal-600 py-3 rounded-lg text-center font-semibold hover:bg-teal-50 transition"
+                  className="block w-full rounded-2xl border border-[#00D474] py-3 text-center font-semibold text-[#00B863] transition hover:bg-[#E8FFF4]"
                 >
                   {t.visaDetail.help.bookConsultation}
                 </Link>
               </div>
-            </div>
+            </Card>
           </div>
         </div>
-      </div>
+      </Container>
 
-      <footer className="bg-gray-900 text-white py-16 px-4 mt-16">
-        <div className="max-w-7xl mx-auto">
+      <footer className="mt-16 bg-[#0B3948] px-4 py-16 text-white">
+        <Container>
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-3 mb-6 md:mb-0">
-              <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-xl flex items-center justify-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#00D474] to-[#00B863]">
                 <span className="text-white font-bold text-2xl">eV</span>
               </div>
               <span className="text-3xl font-bold">e-Vizza</span>
             </div>
             <div className="text-center md:text-right">
-              <p className="text-gray-400">© {new Date().getFullYear()} e-Vizza. All rights reserved.</p>
+              <p className="text-white/70">{t.destinations.footer.rights.replace('{year}', new Date().getFullYear().toString())}</p>
             </div>
           </div>
-        </div>
+        </Container>
       </footer>
     </div>
   );

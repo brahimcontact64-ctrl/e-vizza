@@ -32,19 +32,19 @@ function mergeDeep<T>(target: T, source: Partial<T>): T {
 }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>('ar');
+  const [language, setLanguageState] = useState<Language>('fr');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     // Load language from localStorage with error handling
     try {
       const saved = (localStorage.getItem('lang') || localStorage.getItem('language')) as Language;
-      const initialLanguage = saved && ['en', 'fr', 'ar'].includes(saved) ? saved : 'ar';
+      const initialLanguage = saved && ['en', 'fr', 'ar'].includes(saved) ? saved : 'fr';
       setLanguageState(initialLanguage);
     } catch (error) {
-      // Fallback to Arabic if localStorage fails
+      // Fallback to French if localStorage fails
       console.warn('Failed to load language from localStorage:', error);
-      setLanguageState('ar');
+      setLanguageState('fr');
     }
     setMounted(true);
   }, []);
@@ -71,8 +71,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const changeLanguage = (lang: Language) => {
     if (!['en', 'fr', 'ar'].includes(lang)) {
-      console.warn(`Invalid language: ${lang}. Defaulting to 'ar'.`);
-      lang = 'ar';
+      console.warn(`Invalid language: ${lang}. Defaulting to 'fr'.`);
+      lang = 'fr';
     }
 
     setLanguageState(lang);

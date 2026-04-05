@@ -22,6 +22,7 @@ interface AuthContextType {
     password: string,
     fullName: string
   ) => Promise<{ error: AuthError | null }>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -213,6 +214,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signInWithGoogle = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: (typeof window !== 'undefined' ? window.location.origin : '') + '/dashboard',
+      },
+    });
+  };
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -239,6 +249,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isSuperAdmin,
         signInWithEmail,
         signUpWithEmail,
+        signInWithGoogle,
         signOut,
         refreshUser,
       }}
