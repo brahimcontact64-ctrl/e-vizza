@@ -5,16 +5,14 @@ import { createServerClient } from '@supabase/ssr';
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // Always let the OAuth callback through — it sets its own cookies.
   if (pathname.startsWith('/auth/callback')) {
     return NextResponse.next();
   }
 
-  const res = NextResponse.next({
-    request: req,
-  });
-
+  // Public auth and API routes: pass through without session checks.
   if (pathname.startsWith('/auth/') || pathname.startsWith('/api/')) {
-    return res;
+    return NextResponse.next({ request: req });
   }
 
   const protectedRoutes = [
@@ -28,42 +26,41 @@ export async function proxy(req: NextRequest) {
   const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
 
   if (!isProtected) {
-    return res;
+    return NextResponse.next({ request: req });
   }
+
+  // For protected routes: build the response and keep it in sync with any
+  // cookie mutations Supabase makes (e.g. token refresh).
+  let res = NextResponse.next({ request: req });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name) {
-          return req.cookies.get(name)?.value;
+        getAll() {
+          return req.cookies.getAll();
         },
-        set(name, value, options) {
-          res.cookies.set({
-            name,
-            value,
-            ...options,
-          });
-        },
-        remove(name, options) {
-          res.cookies.set({
-            name,
-            value: '',
-            ...options,
-          });
+        setAll(cookiesToSet) {
+          // Mutate both the request and the response so subsequent middleware
+          // and the page renderer both see the refreshed tokens.
+          cookiesToSet.forEach(({ name, value, options }) =>
+            req.cookies.set(name, value)
+          );
+          res = NextResponse.next({ request: req });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            res.cookies.set(name, value, options)
+          );
         },
       },
     }
   );
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const user = session?.user;
-
-  if (isProtected && !user) {
+  if (!user) {
     const loginUrl = req.nextUrl.clone();
     loginUrl.pathname = '/auth/login';
     loginUrl.searchParams.set('redirect', pathname);
