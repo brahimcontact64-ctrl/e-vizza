@@ -247,13 +247,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
-    const origin =
-      typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL;
+    if (typeof window === 'undefined') {
+      throw new Error('Google OAuth must run in the browser');
+    }
+
+    const { protocol, hostname, port } = window.location;
+    const canonicalHostname = hostname === '127.0.0.1' ? 'localhost' : hostname;
+    const canonicalOrigin = `${protocol}//${canonicalHostname}${port ? `:${port}` : ''}`;
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${origin}/auth/callback`,
+        redirectTo: `${canonicalOrigin}/auth/callback`,
       },
     });
 
