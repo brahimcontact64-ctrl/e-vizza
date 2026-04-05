@@ -41,7 +41,11 @@ export default function ApplyNewPage() {
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
-const [passportValid, setPassportValid] = useState<boolean | null>(null);
+  const [passportValid, setPassportValid] = useState<boolean | null>(null);
+  const [passportVaultData, setPassportVaultData] = useState<{
+    passport_number?: string;
+    expiry_date?: string;
+  } | null>(null);
   const [entryDate, setEntryDate] = useState('');
   const [exitDate, setExitDate] = useState('');
 
@@ -71,23 +75,25 @@ if (error) {
   return;
 }
 if (!data) {
-  setPassportValid(null); 
-  return;
-}
-    
+      console.log('passport vault: no record found for user');
+      setPassportValid(null);
+      setPassportVaultData(null);
+      return;
+    }
+
+    console.log('passport vault:', data);
+    setPassportVaultData(data);
 
     const expiry = new Date(data.expiry_date);
     const today = new Date();
-
     const diffMonths =
       (expiry.getFullYear() - today.getFullYear()) * 12 +
       (expiry.getMonth() - today.getMonth());
 
-    if (diffMonths >= 6) {
-      setPassportValid(true);
-    } else {
-      setPassportValid(false);
-    }
+    // passportValid reflects whether the stored passport meets the 6-month rule.
+    // It is ONLY used for display warnings — it does NOT block the flow when
+    // vault data exists.
+    setPassportValid(diffMonths >= 6);
   };
 
   fetchPassport();
@@ -153,10 +159,6 @@ const handleFileUpload = async (type: string, file: File) => {
     return;
   }
 
-  if (type.toLowerCase().includes('passport') && passportValid === true) {
-  alert(t.apply.documents.passportSaved);
-  return;
-}
   if (type.toLowerCase().includes('passport')) {
     setVerifying(true);
     setPassportValid(null);
@@ -303,7 +305,8 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
         throw appError;
       }
 
-      if (passportData && passportValid !== false) {
+      // Use vault passport regardless of the local expiry-validity display state.
+      if (passportData) {
   const { error: passportDocError } = await supabase
     .from('documents')
     .insert({
@@ -485,7 +488,8 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
 
  
   const isPassportType = docType.toLowerCase().includes('passport');
-  const isAutoPassport = isPassportType && passportValid === true;
+  // Vault record exists → treat passport as covered regardless of expiry display state.
+  const isAutoPassport = isPassportType && passportVaultData !== null;
 
   const uploadedDoc = documents.find(d => d.type === docType);
                 return (
@@ -583,11 +587,23 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
               </Button>
               <Button
                onClick={() => setStep(3)}
-disabled={
-  (documents.length === 0 && passportValid !== true) ||
-  passportValid === false ||
-  verifying
-}
+                disabled={(() => {
+                  if (verifying) return true;
+                  const passportCovered =
+                    passportVaultData !== null ||
+                    (passportValid === true &&
+                      documents.some((d) => d.type.toLowerCase().includes('passport')));
+                  const nonPassportRequired = (visa.requirements ?? []).filter(
+                    (r) => !r.toLowerCase().includes('passport')
+                  );
+                  const nonPassportUploaded = documents.filter(
+                    (d) => !d.type.toLowerCase().includes('passport')
+                  );
+                  const nonPassportCovered =
+                    nonPassportRequired.length === 0 ||
+                    nonPassportUploaded.length >= nonPassportRequired.length;
+                  return !passportCovered || !nonPassportCovered;
+                })()}
                 className="flex-1"
               >
                 {t.apply.documents.continueButton}
