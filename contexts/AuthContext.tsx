@@ -1,7 +1,6 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { Profile } from '@/types/database';
@@ -30,8 +29,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -109,14 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleAuthFailure = async (error: unknown) => {
     console.error('Supabase auth failure:', error);
     clearAuthState();
-
-    try {
-      await supabase.auth.signOut();
-    } catch (signOutError) {
-      console.warn('Error signing out after auth failure:', signOutError);
-    }
-
-    router.replace('/auth/login');
+    setLoading(false);
   };
 
   const refreshUser = async () => {
@@ -183,12 +173,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
       if (!mounted) return;
-
-      if (event === 'SIGNED_OUT') {
-        await handleAuthFailure(new Error(`Auth state change: ${event}`));
-        return;
-      }
-
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
 
@@ -263,12 +247,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
+    const origin =
+      typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL;
+
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: (typeof window !== 'undefined' ? window.location.origin : '') + '/dashboard',
+        redirectTo: `${origin}/dashboard`,
       },
     });
+
+    if (error) {
+      throw error;
+    }
   };
 
   const signOut = async () => {
