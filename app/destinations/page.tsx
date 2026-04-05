@@ -116,14 +116,18 @@ export default function DestinationsPage() {
       <Section className="py-12">
         <div>
           <Card className="mb-8" padding="md">
-            <div className="relative">
-              <Search className={`absolute top-1/2 -translate-y-1/2 text-[#6D8790] ${isRTL ? 'right-4' : 'left-4'}`} size={20} />
+            <div className="relative w-full">
+              <div
+                className={`pointer-events-none absolute inset-y-0 flex items-center ${isRTL ? 'right-0 pr-4' : 'left-0 pl-4'}`}
+              >
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
               <input
                 type="text"
                 placeholder={t.destinations.searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`ui-input ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} text-base placeholder-[#7C969F]`}
+                className={`w-full rounded-xl border border-gray-200 bg-white py-3 text-base leading-normal text-[#0B3948] placeholder-[#7C969F] focus:outline-none focus:ring-2 focus:ring-green-400 ${isRTL ? 'pr-12 pl-4 text-right' : 'pl-12 pr-4 text-left'}`}
               />
             </div>
           </Card>
