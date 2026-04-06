@@ -1,25 +1,44 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServerClient } from '@supabase/ssr';
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
+  const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const nextPath = searchParams.get('next');
 
   if (!code) {
-    return NextResponse.redirect(new URL('/auth/login', request.url));
+    return NextResponse.redirect(`${origin}/auth/login`);
   }
 
-  const supabase = await createClient();
+  let response = NextResponse.redirect(`${origin}/dashboard`);
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.headers.get('cookie')
+            ?.split(';')
+            .map((c) => {
+              const [name, ...rest] = c.trim().split('=');
+              return { name, value: rest.join('=') };
+            }) || [];
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
+
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
-    console.error('OAuth code exchange failed:', error);
-    return NextResponse.redirect(new URL('/auth/login', request.url));
+    console.error(error);
+    return NextResponse.redirect(`${origin}/auth/login`);
   }
 
-  console.log(await supabase.auth.getUser());
-
-  const redirectPath = nextPath?.startsWith('/') ? nextPath : '/dashboard';
-  return NextResponse.redirect(new URL(redirectPath, request.url));
+  return response;
 }
