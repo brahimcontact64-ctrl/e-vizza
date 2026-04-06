@@ -9,13 +9,15 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
- const supabase = await createClient(); 
+  const supabase = createClient();
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
     console.error('OAuth code exchange failed:', error);
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
+
+  console.log(await supabase.auth.getUser());
 
   return NextResponse.redirect(new URL('/dashboard', request.url));
 }

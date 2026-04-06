@@ -34,22 +34,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const ensureProfileForAuthenticatedUser = async () => {
+  const ensureProfileForAuthenticatedUser = async (authenticatedUser: User) => {
     try {
-      const {
-        data: { user: authenticatedUser },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError) {
-        throw userError;
-      }
-
-      if (!authenticatedUser) {
-        setProfile(null);
-        return;
-      }
-
       const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -112,6 +98,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = async () => {
     try {
       const {
+        data: { user: authenticatedUser },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) {
+        throw userError;
+      }
+
+      if (!authenticatedUser) {
+        clearAuthState();
+        return;
+      }
+
+      const {
         data: { session: currentSession },
         error,
       } = await supabase.auth.getSession();
@@ -120,14 +120,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
 
-      if (!currentSession?.user) {
-        clearAuthState();
-        return;
-      }
-
-      setSession(currentSession);
-      setUser(currentSession.user);
-      await ensureProfileForAuthenticatedUser();
+      setSession(currentSession ?? null);
+      setUser(authenticatedUser);
+      await ensureProfileForAuthenticatedUser(authenticatedUser);
     } catch (error) {
       await handleAuthFailure(error);
     }
@@ -138,6 +133,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const init = async () => {
       try {
+        const {
+          data: { user: authenticatedUser },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (!mounted) return;
+
+        if (userError) {
+          throw userError;
+        }
+
         const {
           data: { session: initialSession },
           error,
@@ -150,10 +156,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         setSession(initialSession ?? null);
-        setUser(initialSession?.user ?? null);
+        setUser(authenticatedUser ?? initialSession?.user ?? null);
 
-        if (initialSession?.user) {
-          await ensureProfileForAuthenticatedUser();
+        if (authenticatedUser) {
+          await ensureProfileForAuthenticatedUser(authenticatedUser);
         } else {
           setProfile(null);
         }
@@ -173,16 +179,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
       if (!mounted) return;
-      setSession(nextSession);
-      setUser(nextSession?.user ?? null);
 
-      if (nextSession?.user) {
-        await ensureProfileForAuthenticatedUser();
-      } else {
-        setProfile(null);
+      try {
+        const {
+          data: { user: authenticatedUser },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError) {
+          throw userError;
+        }
+
+        setSession(nextSession ?? null);
+        setUser(authenticatedUser ?? nextSession?.user ?? null);
+
+        if (authenticatedUser) {
+          await ensureProfileForAuthenticatedUser(authenticatedUser);
+        } else {
+          setProfile(null);
+        }
+
+        if (event === 'SIGNED_OUT') {
+          clearAuthState();
+        }
+      } catch (error) {
+        await handleAuthFailure(error);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     });
 
     return () => {
@@ -207,7 +231,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data?.session) {
         setSession(data.session);
         setUser(data.session.user);
-        await ensureProfileForAuthenticatedUser();
+        await ensureProfileForAuthenticatedUser(data.session.user);
       }
 
       return {

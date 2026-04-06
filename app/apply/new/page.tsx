@@ -29,6 +29,26 @@ interface UploadedDocument {
   preview?: string;
 }
 
+const isPassportExpiryValid = (expiryDate?: string | null): boolean => {
+  if (!expiryDate) return false;
+
+  const expiry = new Date(expiryDate);
+  if (Number.isNaN(expiry.getTime())) return false;
+
+  const minExpiryDate = new Date();
+  minExpiryDate.setMonth(minExpiryDate.getMonth() + 6);
+
+  return expiry >= minExpiryDate;
+};
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
+};
+
 export default function ApplyNewPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -61,56 +81,44 @@ export default function ApplyNewPage() {
       fetchVisa();
     }
   }, [visaId]);
-useEffect(() => {
-  const fetchPassport = async () => {
-    if (!session?.user) {
-      setPassportValid(false);
-      setPassportVaultData(null);
+
+  useEffect(() => {
+    const fetchPassport = async () => {
+      if (!session?.user) {
+        setPassportValid(false);
+        setPassportVaultData(null);
+        setPassportLoaded(true);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('passport_vault')
+        .select('passport_number, expiry_date')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Passport fetch error:', error);
+        setPassportValid(false);
+        setPassportVaultData(null);
+        setPassportLoaded(true);
+        return;
+      }
+
+      if (!data) {
+        setPassportValid(false);
+        setPassportVaultData(null);
+        setPassportLoaded(true);
+        return;
+      }
+
+      setPassportVaultData(data);
+      setPassportValid(isPassportExpiryValid(data.expiry_date));
       setPassportLoaded(true);
-      return;
-    }
+    };
 
-  const { data, error } = await supabase
-  .from('passport_vault')
-  .select('*')
-  .eq('user_id', session.user.id)
-  .maybeSingle();
-
-if (error) {
-  console.error('Passport fetch error:', error);
-  setPassportLoaded(true);
-  return;
-}
-if (!data) {
-      console.log('No passport in vault');
-      setPassportValid(false);
-      setPassportVaultData(null);
-      setPassportLoaded(true);
-      return;
-    }
-
-    console.log('passport vault:', data);
-    setPassportVaultData(data);
-
-    const expiry = new Date(data.expiry_date);
-    const today = new Date();
-    const diffMonths =
-      (expiry.getFullYear() - today.getFullYear()) * 12 +
-      (expiry.getMonth() - today.getMonth());
-
-    // passportValid reflects whether the stored passport meets the 6-month rule.
-    // It is ONLY used for display warnings — it does NOT block the flow when
-    // vault data exists.
-    setPassportValid(diffMonths >= 6);
-    setPassportLoaded(true);
-  };
-
-  fetchPassport();
-}, [session]);
-
-useEffect(() => {
-  console.log('passportValid:', passportValid);
-}, [passportValid]);
+    fetchPassport();
+  }, [session]);
 
   const fetchVisa = async () => {
     if (!visaId) return;
@@ -161,20 +169,20 @@ const verifyPassport = async (file: File) => {
     if (!res.ok) throw new Error(data.error || t.apply.errors.verificationFailed);
 
     return data;
-  } catch (e: any) {
-    throw new Error(e.message || t.apply.errors.verificationFailed);
+  } catch (error: unknown) {
+    throw new Error(getErrorMessage(error, t.apply.errors.verificationFailed));
   }
 };
 
 const handleFileUpload = async (type: string, file: File) => {
-  const hasPassport = passportValid === true || passportVaultData !== null;
+  const hasValidPassport = passportValid === true;
 
   if (file.size > 10 * 1024 * 1024) {
     alert(t.apply.documents.fileSizeLimit);
     return;
   }
 
-  if (type.toLowerCase().includes('passport') && hasPassport) {
+  if (type.toLowerCase().includes('passport') && hasValidPassport) {
     alert('Passport already exists in your account');
     return;
   }
@@ -186,34 +194,45 @@ const handleFileUpload = async (type: string, file: File) => {
     try {
       const res = await verifyPassport(file);
 
-      if (!res.isPassport) {
+      if (!res.isPassport || !isPassportExpiryValid(res.expiry_date)) {
         setPassportValid(false);
         alert(t.apply.documents.invalid);
         setVerifying(false);
         return;
       }
 
-    setPassportValid(true);
+      setPassportValid(true);
 
-if (session?.user?.id) {
-  await supabase
-    .from('passport_vault')
-    .upsert({
-      user_id: session.user.id,
-      passport_number: res.passport_number,
-      expiry_date: res.expiry_date,
-      updated_at: new Date().toISOString()
-    });
-}
-    } catch (err: any) {
+      if (session?.user?.id) {
+        const { error: upsertPassportError } = await supabase
+          .from('passport_vault')
+          .upsert({
+            user_id: session.user.id,
+            passport_number: res.passport_number,
+            expiry_date: res.expiry_date,
+            updated_at: new Date().toISOString(),
+          });
+
+        if (upsertPassportError) {
+          throw upsertPassportError;
+        }
+
+        setPassportVaultData({
+          passport_number: res.passport_number,
+          expiry_date: res.expiry_date,
+        });
+      }
+
+      setVerifying(false);
+      return;
+    } catch (error: unknown) {
+      console.error('Passport upload/verify error:', error);
       setPassportValid(false);
       alert(t.apply.errors.verificationFailed);
       setVerifying(false);
       return;
     }
-
-  setVerifying(false);
-}
+  }
 
   const preview = file.type.startsWith('image/')
       ? URL.createObjectURL(file)
@@ -257,27 +276,40 @@ if (session?.user?.id) {
   };
 
   const handleSubmit = async () => {
-    
-   const { data: { session: currentSession } } = await supabase.auth.getSession();
+    console.log(await supabase.auth.getUser());
 
-if (!currentSession) {
-  alert(t.apply.errors.sessionExpired);
- router.push(`/auth/login?redirect=${encodeURIComponent(`/apply/new?visa_id=${visaId}`)}`);
-  return;
-}
+    const {
+      data: { user: currentUser },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-const userId = currentSession.user.id;
-// 🔥 نجيب passport من vault
-const { data: passportData } = await supabase
-  .from('passport_vault')
-  .select('*')
-  .eq('user_id', userId)
-  .maybeSingle();
-
-    if (!currentSession?.user) {
-      console.error('Session exists but no user found');
+    if (userError || !currentUser) {
+      console.error('Authenticated user not found:', userError);
       alert(t.apply.errors.sessionExpired);
       router.push(`/auth/login?redirect=${encodeURIComponent(`/apply/new?visa_id=${visaId}`)}`);
+      return;
+    }
+
+    const userId = currentUser.id;
+
+    const { data: passportData, error: passportError } = await supabase
+      .from('passport_vault')
+      .select('passport_number, expiry_date')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (passportError) {
+      console.error('Passport vault read error:', passportError);
+      alert(t.apply.errors.submitFailed);
+      return;
+    }
+
+    const hasValidPassport = Boolean(
+      passportData && isPassportExpiryValid(passportData.expiry_date)
+    );
+
+    if (!hasValidPassport) {
+      alert(t.apply.documents.invalid);
       return;
     }
 
@@ -291,20 +323,24 @@ const { data: passportData } = await supabase
       return;
     }
 
- const requiredDocs = visa.requirements || [];
+    const requiredDocs = visa.requirements || [];
 
-const nonPassportDocs = requiredDocs.filter(
-  r => !r.toLowerCase().includes('passport')
-);
+    const nonPassportDocs = requiredDocs.filter(
+      r => !r.toLowerCase().includes('passport')
+    );
 
-const uploadedNonPassportDocs = documents.filter(
-  d => !d.type.toLowerCase().includes('passport')
-);
+    const uploadedNonPassportDocs = documents.filter(
+      d => !d.type.toLowerCase().includes('passport')
+    );
 
-if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
-  alert(t.apply.errors.uploadRequiredDocuments);
-  return;
-}
+    const missingNonPassportDocs = nonPassportDocs.filter(
+      requiredDoc => !uploadedNonPassportDocs.some(uploadedDoc => uploadedDoc.type === requiredDoc)
+    );
+
+    if (missingNonPassportDocs.length > 0) {
+      alert(t.apply.errors.uploadRequiredDocuments);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -325,26 +361,23 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
         throw appError;
       }
 
-      // Use vault passport regardless of the local expiry-validity display state.
-      if (passportData) {
-  const { error: passportDocError } = await supabase
-    .from('documents')
-    .insert({
-      application_id: application.id,
-      user_id: userId,
-      type: 'passport',
-      file_url: 'vault://passport',
-      file_name: 'passport_auto',
-      file_size: 0,
-      file_type: 'image',
-      source_type: 'vault',
-    });
+      const { error: passportDocError } = await supabase
+        .from('documents')
+        .insert({
+          application_id: application.id,
+          user_id: userId,
+          type: 'passport',
+          file_url: 'vault://passport',
+          file_name: 'passport_auto',
+          file_size: 0,
+          file_type: 'image',
+          source_type: 'vault',
+        });
 
-  if (passportDocError) {
-    console.error('Auto passport error:', passportDocError);
-    throw passportDocError;
-  }
-}
+      if (passportDocError) {
+        console.error('Auto passport error:', passportDocError);
+        throw passportDocError;
+      }
 
      for (const doc of documents.filter(d => !d.type.toLowerCase().includes('passport'))){
        const uploadResult = await uploadDocumentToStorage(
@@ -376,7 +409,7 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
       }
 
      router.replace('/dashboard/applications?success=true');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error submitting application:', error);
       alert(t.apply.errors.submitFailed);
     } finally {
@@ -404,7 +437,16 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
     return null;
   }
 
-  const hasPassport = passportValid === true || passportVaultData !== null;
+  const requiredDocs = visa?.requirements || [];
+  const requiredNonPassportDocs = requiredDocs.filter(
+    requirement => !requirement.toLowerCase().includes('passport')
+  );
+  const missingRequiredNonPassportDocs = requiredNonPassportDocs.filter(
+    requirement => !documents.some(document => document.type === requirement)
+  );
+  const hasPassportInVault = passportVaultData !== null;
+  const hasValidPassport = passportValid === true;
+  const canContinueToReview = hasValidPassport && missingRequiredNonPassportDocs.length === 0 && !verifying;
 
   return (
     <div className="min-h-screen bg-background">
@@ -502,13 +544,18 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
         {step === 2 && (
           <Card>
             <h2 className="mb-2 text-2xl font-bold text-[#0B3948]">{t.apply.documents.title}</h2>
-            {hasPassport && (
+            {hasValidPassport && (
  <div className="bg-green-100 border border-green-400 p-3 rounded mb-4 text-green-800 font-medium">
   {t.apply.documents.passportSaved}
 </div>
 )}
+            {hasPassportInVault && !hasValidPassport && (
+              <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 font-medium text-red-700">
+                {t.apply.documents.invalid}
+              </div>
+            )}
            <p className="mb-6 text-[#355865]">
-  {hasPassport
+  {hasValidPassport
     ? t.apply.documents.passportSavedDesc
     : t.apply.documents.defaultDesc}
 </p>
@@ -518,8 +565,7 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
 
  
   const isPassportType = docType.toLowerCase().includes('passport');
-  // Vault record exists → treat passport as covered regardless of expiry display state.
-  const isAutoPassport = isPassportType && passportVaultData !== null;
+  const isAutoPassport = isPassportType && hasValidPassport && hasPassportInVault;
 
   const uploadedDoc = documents.find(d => d.type === docType);
                 return (
@@ -617,7 +663,7 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
               </Button>
               <Button
                onClick={() => setStep(3)}
-                disabled={(!hasPassport && documents.length === 0) || verifying}
+                disabled={!canContinueToReview}
                 className="flex-1"
               >
                 {t.apply.documents.continueButton}
@@ -658,7 +704,7 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
             </div>
 
             <div className="mb-8 rounded-2xl bg-[#F7FBFA] p-6">
-              <h3 className="mb-4 text-lg font-semibold text-[#0B3948]">{t.apply.review.uploadedDocuments.replace('{count}', (documents.length + (hasPassport ? 1 : 0)).toString())}</h3>
+              <h3 className="mb-4 text-lg font-semibold text-[#0B3948]">{t.apply.review.uploadedDocuments.replace('{count}', (documents.length + (hasValidPassport ? 1 : 0)).toString())}</h3>
              <div className="space-y-2">
   {documents.map((doc, idx) => (
     <div key={idx} className="flex items-center text-sm text-[#355865]">
@@ -667,7 +713,7 @@ if (nonPassportDocs.length > 0 && uploadedNonPassportDocs.length === 0) {
     </div>
   ))}
 
-  {hasPassport && (
+  {hasValidPassport && (
     <div className="flex items-center text-sm text-[#355865]">
       <CheckCircle size={16} className="text-green-500 mr-2 flex-shrink-0" />
       <span>{t.apply.review.passportFromVault}</span>

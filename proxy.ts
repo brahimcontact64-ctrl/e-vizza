@@ -31,7 +31,7 @@ export async function proxy(req: NextRequest) {
 
   // For protected routes: build the response and keep it in sync with any
   // cookie mutations Supabase makes (e.g. token refresh).
-  let res = NextResponse.next({ request: req });
+  const res = NextResponse.next({ request: req });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,15 +42,9 @@ export async function proxy(req: NextRequest) {
           return req.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          // Mutate both the request and the response so subsequent middleware
-          // and the page renderer both see the refreshed tokens.
-          cookiesToSet.forEach(({ name, value, options }) =>
-            req.cookies.set(name, value)
-          );
-          res = NextResponse.next({ request: req });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            res.cookies.set(name, value, options)
-          );
+          cookiesToSet.forEach(({ name, value, options }) => {
+            res.cookies.set(name, value, options);
+          });
         },
       },
     }
@@ -59,6 +53,12 @@ export async function proxy(req: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  console.log({
+    authUser: user?.id ?? null,
+    hasAccessCookie: Boolean(req.cookies.get('sb-access-token')),
+    hasRefreshCookie: Boolean(req.cookies.get('sb-refresh-token')),
+  });
 
   if (!user) {
     const loginUrl = req.nextUrl.clone();
