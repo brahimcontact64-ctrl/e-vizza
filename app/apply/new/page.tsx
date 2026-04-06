@@ -276,15 +276,9 @@ const handleFileUpload = async (type: string, file: File) => {
   };
 
   const handleSubmit = async () => {
-    console.log(await supabase.auth.getUser());
+    const currentUser = session?.user;
 
-    const {
-      data: { user: currentUser },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !currentUser) {
-      console.error('Authenticated user not found:', userError);
+    if (!currentUser) {
       alert(t.apply.errors.sessionExpired);
       router.push(`/auth/login?redirect=${encodeURIComponent(`/apply/new?visa_id=${visaId}`)}`);
       return;

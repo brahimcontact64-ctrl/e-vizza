@@ -4,12 +4,14 @@ import { createServerClient } from '@supabase/ssr';
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
+  const nextPath = searchParams.get('next');
 
   if (!code) {
     return NextResponse.redirect(`${origin}/auth/login`);
   }
 
-  let response = NextResponse.redirect(`${origin}/dashboard`);
+  const redirectPath = nextPath?.startsWith('/') ? nextPath : '/dashboard';
+  let response = NextResponse.redirect(`${origin}${redirectPath}`);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
