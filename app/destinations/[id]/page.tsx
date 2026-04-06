@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { translateEntries, translateDescription, translateRequirement } from '@/lib/visaTranslations';
 import { supabase } from '@/lib/supabase';
@@ -34,7 +33,6 @@ interface Visa {
 export default function VisaDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const { session } = useAuth();
   const { t, isRTL, language } = useLanguage();
   const [visa, setVisa] = useState<Visa | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,11 +84,7 @@ export default function VisaDetailPage() {
   };
 
   const handleApply = () => {
-    if (!session) {
-      router.push(`/auth/login?redirect=/apply/new?visa_id=${params.id}`);
-    } else {
-      router.push(`/apply/new?visa_id=${params.id}`);
-    }
+    router.push(`/apply/new?visa_id=${params.id}`);
   };
 
   if (loading) {
@@ -249,12 +243,6 @@ export default function VisaDetailPage() {
               <Button onClick={handleApply} size="lg" fullWidth>
                 {t.visaDetail.applyNow}
               </Button>
-
-              {!session && (
-                <p className="mt-4 text-center text-sm ui-muted">
-                  {t.visaDetail.signInMessage}
-                </p>
-              )}
 
               <div className="mt-8 border-t border-[#E4EFEB] pt-8">
                 <h3 className="mb-4 font-bold text-[#0B3948]">{t.visaDetail.help.title}</h3>

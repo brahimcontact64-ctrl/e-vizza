@@ -21,7 +21,7 @@ interface AuthContextType {
     password: string,
     fullName: string
   ) => Promise<{ error: AuthError | null }>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: (redirectPath?: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -270,15 +270,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (redirectPath?: string) => {
     if (typeof window === 'undefined') {
       throw new Error('Google OAuth must run in the browser');
+    }
+
+    const callbackUrl = new URL('/auth/callback', window.location.origin);
+    if (redirectPath?.startsWith('/')) {
+      callbackUrl.searchParams.set('next', redirectPath);
     }
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: callbackUrl.toString(),
       },
     });
 

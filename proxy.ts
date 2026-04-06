@@ -10,8 +10,8 @@ export async function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Public auth and API routes: pass through without session checks.
-  if (pathname.startsWith('/auth/') || pathname.startsWith('/api/')) {
+  // Public auth routes: pass through without session checks.
+  if (pathname.startsWith('/auth/')) {
     return NextResponse.next({ request: req });
   }
 
@@ -72,7 +72,6 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/api/:path*',
     '/dashboard/:path*',
     '/applications/:path*',
     '/appointments/:path*',
