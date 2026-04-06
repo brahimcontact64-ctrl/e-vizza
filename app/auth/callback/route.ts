@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   }
 
   const redirectPath = nextPath?.startsWith('/') ? nextPath : '/dashboard';
-  let response = NextResponse.redirect(`${origin}${redirectPath}`);
+  const response = NextResponse.redirect(`${origin}${redirectPath}`);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

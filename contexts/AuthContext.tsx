@@ -98,26 +98,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = async () => {
     try {
       const {
-        data: { user: authenticatedUser },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError) {
-        throw userError;
-      }
-
-      if (!authenticatedUser) {
-        clearAuthState();
-        return;
-      }
-
-      const {
         data: { session: currentSession },
         error,
       } = await supabase.auth.getSession();
 
       if (error) {
         throw error;
+      }
+
+      const authenticatedUser = currentSession?.user;
+
+      if (!authenticatedUser) {
+        clearAuthState();
+        return;
       }
 
       setSession(currentSession ?? null);
@@ -134,17 +127,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const init = async () => {
       try {
         const {
-          data: { user: authenticatedUser },
-          error: userError,
-        } = await supabase.auth.getUser();
-
-        if (!mounted) return;
-
-        if (userError) {
-          throw userError;
-        }
-
-        const {
           data: { session: initialSession },
           error,
         } = await supabase.auth.getSession();
@@ -155,8 +137,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw error;
         }
 
+        const authenticatedUser = initialSession?.user ?? null;
+
         setSession(initialSession ?? null);
-        setUser(authenticatedUser ?? initialSession?.user ?? null);
+        setUser(authenticatedUser);
 
         if (authenticatedUser) {
           await ensureProfileForAuthenticatedUser(authenticatedUser);
@@ -181,17 +165,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!mounted) return;
 
       try {
-        const {
-          data: { user: authenticatedUser },
-          error: userError,
-        } = await supabase.auth.getUser();
-
-        if (userError) {
-          throw userError;
-        }
+        const authenticatedUser = nextSession?.user ?? null;
 
         setSession(nextSession ?? null);
-        setUser(authenticatedUser ?? nextSession?.user ?? null);
+        setUser(authenticatedUser);
 
         if (authenticatedUser) {
           await ensureProfileForAuthenticatedUser(authenticatedUser);

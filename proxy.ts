@@ -51,8 +51,10 @@ export async function proxy(req: NextRequest) {
   );
 
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const user = session?.user;
 
   console.log({
     authUser: user?.id ?? null,
