@@ -6,13 +6,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Menu, X } from 'lucide-react';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 export default function Navbar() {
   const { session, signOut } = useAuth();
   const { t, isRTL } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
@@ -29,7 +30,8 @@ export default function Navbar() {
 
   const handleSignOut = async () => {
     await signOut();
-    window.location.href = '/';
+    router.refresh();
+    router.push('/');
   };
 
   const navLinkClass = (href: string) =>

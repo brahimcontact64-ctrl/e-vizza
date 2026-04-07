@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,18 +15,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { session, loading, signOut } = useAuth();
   const { t } = useLanguage();
 
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   useEffect(() => {
     if (loading) return;
     if (!session) {
       router.replace('/auth/login');
     }
-  }, [session, loading]);
+  }, [session, loading, router]);
 
   if (loading) {
     return (
@@ -46,6 +40,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const handleSignOut = async () => {
     await signOut();
+    router.refresh();
     router.push('/');
   };
 
@@ -79,7 +74,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {navigation.map((item) => {
 
                 const Icon = item.icon;
-                const active = mounted && pathname === item.href;
+                const active = pathname === item.href;
 
                 return (
                   <Link
@@ -129,7 +124,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {navigation.map((item) => {
 
             const Icon = item.icon;
-            const active = mounted && pathname === item.href;
+            const active = pathname === item.href;
 
             return (
               <Link

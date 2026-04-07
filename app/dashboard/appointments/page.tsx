@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -12,23 +12,19 @@ import { Calendar, ArrowRight, Plus } from 'lucide-react'
 
 export default function AppointmentsPage() {
 
-  const { session } = useAuth()
+  const { session, loading: authLoading } = useAuth()
   const { t } = useLanguage()
 
   const [appointments, setAppointments] = useState<VisaAppointment[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (session?.user) {
-      fetchAppointments()
-    } else {
+  const fetchAppointments = useCallback(async () => {
+
+    if (!session?.user) {
+      setAppointments([])
       setLoading(false)
+      return
     }
-  }, [session])
-
-  const fetchAppointments = async () => {
-
-    if (!session?.user) return
 
     try {
 
@@ -52,7 +48,36 @@ export default function AppointmentsPage() {
 
     }
 
-  }
+  }, [session])
+
+  useEffect(() => {
+    if (authLoading) return
+    fetchAppointments()
+  }, [session, authLoading, fetchAppointments])
+
+  useEffect(() => {
+    if (!session?.user) return
+
+    const channel = supabase
+      .channel(`realtime-appointments-list-${session.user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'visa_appointments',
+          filter: `user_id=eq.${session.user.id}`,
+        },
+        () => {
+          fetchAppointments()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [session, fetchAppointments])
 
   if (loading) {
 

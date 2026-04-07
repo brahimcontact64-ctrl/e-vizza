@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
@@ -11,6 +12,7 @@ import Button from '@/components/Button';
 import { Mail, Pencil, ShieldCheck } from 'lucide-react';
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { session, profile, refreshUser } = useAuth();
   const { t } = useLanguage();
   const [editing, setEditing] = useState(false);
@@ -48,9 +50,10 @@ export default function ProfilePage() {
       if (error) throw error;
 
       await refreshUser();
+      router.refresh();
       setMessage({ type: 'success', text: t.dashboard.profile.messages.success });
       setEditing(false);
-    } catch (error: any) {
+    } catch {
       setMessage({ type: 'error', text: t.dashboard.profile.messages.error });
     } finally {
       setLoading(false);

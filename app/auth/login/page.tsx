@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Loader as Loader2 } from 'lucide-react';
@@ -20,6 +20,7 @@ function GoogleIcon() {
 }
 
 export default function LoginPage() {
+  const router = useRouter();
   const { signInWithGoogle, loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const { t } = useLanguage();
@@ -32,6 +33,7 @@ export default function LoginPage() {
     try {
       const redirect = searchParams.get('redirect') || undefined;
       await signInWithGoogle(redirect);
+      router.refresh();
     } catch {
       setError(t.auth.google.failed);
       setGoogleLoading(false);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -18,22 +18,13 @@ export default function ApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-
-    if (authLoading) return
+  const fetchApplications = useCallback(async () => {
 
     if (!session?.user) {
+      setApplications([])
       setLoading(false)
       return
     }
-
-    fetchApplications()
-
-  }, [session, authLoading])
-
-  const fetchApplications = async () => {
-
-    if (!session?.user) return
 
     try {
 
@@ -57,7 +48,39 @@ export default function ApplicationsPage() {
 
     }
 
-  }
+  }, [session])
+
+  useEffect(() => {
+
+    if (authLoading) return
+
+    fetchApplications()
+
+  }, [session, authLoading, fetchApplications])
+
+  useEffect(() => {
+    if (!session?.user) return
+
+    const channel = supabase
+      .channel(`realtime-apps-list-${session.user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'applications',
+          filter: `user_id=eq.${session.user.id}`,
+        },
+        () => {
+          fetchApplications()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [session, fetchApplications])
 
   if (loading) {
 

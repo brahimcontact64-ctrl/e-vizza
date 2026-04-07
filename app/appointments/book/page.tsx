@@ -67,7 +67,7 @@ export default function BookAppointmentPage() {
 
   const router = useRouter()
   const { session, loading: authLoading } = useAuth()
-  const { t, isRTL } = useLanguage()
+  const { t } = useLanguage()
 
   const months = useMemo(() => generateMonths(), [])
 
@@ -109,7 +109,7 @@ const [passportValid, setPassportValid] = useState<boolean | null>(null)
 
     return () => clearInterval(interval)
 
-  }, [])
+  }, [t])
 
   useEffect(() => {
     if (!authLoading && !session) {
@@ -168,9 +168,9 @@ const verifyPassport = async (file: File) => {
 
     return data
 
-  } catch (e:any) {
-
-    throw new Error(e.message || t.appointments.book.errors.verificationFailed)
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : t.appointments.book.errors.verificationFailed
+    throw new Error(message)
 
   }
 
@@ -234,6 +234,25 @@ const verifyPassport = async (file: File) => {
     return () => clearInterval(interval)
   }, [fetchQuota])
 
+  useEffect(() => {
+    if (!session?.user) return
+
+    const channel = supabase
+      .channel(`realtime-appointments-quota-${session.user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'visa_appointments' },
+        () => {
+          fetchQuota()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [session, fetchQuota])
+
   const submit = async () => {
     if (!session?.user) {
       alert(t.appointments.book.errors.sessionExpired)
@@ -282,7 +301,7 @@ const verifyPassport = async (file: File) => {
       }
 
       let status = 'priority_request'
-      let queuePosition = total + 1
+      const queuePosition = total + 1
 
       if (total >= 5) {
         status = 'waiting_list'
@@ -321,11 +340,13 @@ const file = await uploadPassport()
 
       if (insertError) throw insertError
 
+  router.refresh()
       router.push(`/appointments/success?status=${status}&queue=${queuePosition}`)
       
-    } catch (e: any) {
-      console.error(e)
-      setError(e?.message || t.appointments.book.errors.fillAllFields)
+    } catch (error: unknown) {
+      console.error(error)
+      const message = error instanceof Error ? error.message : t.appointments.book.errors.fillAllFields
+      setError(message)
     } finally {
       setLoading(false)
     }
@@ -546,7 +567,7 @@ const file = await uploadPassport()
         setPassportValid(false)
         setError(t.appointments.book.errors.invalidPassport)
       }
-    } catch (err: any) {
+    } catch {
       setPassportValid(false)
       setError(t.appointments.book.errors.verificationFailed)
     } finally {

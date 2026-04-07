@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -11,33 +11,34 @@ import StatusLabel from '@/components/StatusLabel';
 import { FileText, Calendar, ArrowRight, Plus } from 'lucide-react';
 
 export default function DashboardPage() {
-  const { session, profile } = useAuth();
+  const { session, profile, loading: authLoading } = useAuth();
   const { t } = useLanguage();
 
   const [applications, setApplications] = useState<Application[]>([]);
   const [appointments, setAppointments] = useState<VisaAppointment[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (session?.user) {
-      fetchData();
+  const fetchData = useCallback(async () => {
+    if (!session?.user) {
+      setApplications([]);
+      setAppointments([]);
+      setLoading(false);
+      return;
     }
-  }, [session]);
 
-  const fetchData = async () => {
     try {
       const [apps, appts] = await Promise.all([
         supabase
           .from('applications')
           .select('*,visa:visas(*)')
-          .eq('user_id', session!.user.id)
+          .eq('user_id', session.user.id)
           .order('created_at', { ascending: false })
           .limit(3),
 
         supabase
           .from('visa_appointments')
           .select('*')
-          .eq('user_id', session!.user.id)
+          .eq('user_id', session.user.id)
           .order('created_at', { ascending: false })
           .limit(3),
       ]);
@@ -49,7 +50,48 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    fetchData();
+  }, [session, authLoading, fetchData]);
+
+  useEffect(() => {
+    if (!session?.user) return;
+
+    const channel = supabase
+      .channel(`realtime-apps-${session.user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'applications',
+          filter: `user_id=eq.${session.user.id}`,
+        },
+        () => {
+          fetchData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'visa_appointments',
+          filter: `user_id=eq.${session.user.id}`,
+        },
+        () => {
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [session, fetchData]);
 
   const getFlag = (country?: string) => {
     const flags: Record<string, string> = {

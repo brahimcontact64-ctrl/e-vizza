@@ -91,6 +91,10 @@ export default function ApplyNewPage() {
 
   useEffect(() => {
     const fetchPassport = async () => {
+      if (authLoading) {
+        return;
+      }
+
       if (!session?.user) {
         setPassportValid(false);
         setPassportVaultData(null);
@@ -125,7 +129,7 @@ export default function ApplyNewPage() {
     };
 
     fetchPassport();
-  }, [session]);
+  }, [session, authLoading]);
 
   const fetchVisa = async () => {
     if (!visaId) return;
@@ -228,6 +232,8 @@ const handleFileUpload = async (type: string, file: File) => {
           passport_number: res.passport_number,
           expiry_date: res.expiry_date,
         });
+
+        router.refresh();
       }
 
       setVerifying(false);
@@ -409,7 +415,8 @@ const handleFileUpload = async (type: string, file: File) => {
         }
       }
 
-     router.replace('/dashboard/applications?success=true');
+      router.refresh();
+         router.replace('/dashboard/applications?success=true');
     } catch (error: unknown) {
       console.error('Error submitting application:', error);
       alert(t.apply.errors.submitFailed);

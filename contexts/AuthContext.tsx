@@ -171,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(authenticatedUser);
 
         if (authenticatedUser) {
-          await ensureProfileForAuthenticatedUser(authenticatedUser);
+          await refreshUser();
         } else {
           setProfile(null);
         }
