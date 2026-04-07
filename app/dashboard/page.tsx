@@ -88,7 +88,7 @@ export default function DashboardPage() {
 
       <div className="mb-10 grid gap-6 md:grid-cols-2">
         <Link
-          href="/apply/new"
+          href="/destinations"
           className="ui-card ui-card-hover min-h-[170px] bg-gradient-to-r from-[#00D474] to-[#00B863] p-5 text-white sm:p-6"
         >
           <div className="flex h-full flex-col justify-between">
@@ -226,7 +226,7 @@ export default function DashboardPage() {
       {/* Persistent Apply CTA — always visible, clears the floating WhatsApp button */}
       <div className="mt-10">
         <Link
-          href="/apply/new"
+          href="/destinations"
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#00D474] to-[#00B863] py-4 text-base font-semibold text-white shadow-lg shadow-[#00D474]/30 transition-all hover:opacity-90 hover:scale-[1.01] active:scale-100"
         >
           <Plus size={20} />

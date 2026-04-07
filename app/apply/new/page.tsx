@@ -71,6 +71,13 @@ export default function ApplyNewPage() {
   const [exitDate, setExitDate] = useState('');
 
   useEffect(() => {
+    if (!visaId) {
+      router.replace('/destinations');
+      return;
+    }
+  }, [visaId, router]);
+
+  useEffect(() => {
     if (!authLoading && !session) {
      router.push(`/auth/login?redirect=${encodeURIComponent(`/apply/new?visa_id=${visaId}`)}`);
     }

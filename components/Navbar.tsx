@@ -22,7 +22,10 @@ export default function Navbar() {
   }, []);
 
   // Close mobile menu on route change
-  useEffect(() => { setMobileMenuOpen(false); }, [pathname]);
+  useEffect(() => {
+    const timer = setTimeout(() => setMobileMenuOpen(false), 0);
+    return () => clearTimeout(timer);
+  }, [pathname]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -82,7 +85,7 @@ export default function Navbar() {
 
                 {session ? (
                   <>
-                    <Link href="/apply/new" className={navLinkClass('/apply/new')}>{t.navbar.applyVisa}</Link>
+                    <Link href="/destinations" className={navLinkClass('/destinations')}>{t.navbar.applyVisa}</Link>
                     <Link href="/appointments/book" className={navLinkClass('/appointments/book')}>{t.navbar.appointments}</Link>
                     <Link href="/dashboard" className={navLinkClass('/dashboard')}>{t.navbar.dashboard}</Link>
                     <Link href="/dashboard/applications" className={navLinkClass('/dashboard/applications')}>{t.navbar.myApplications}</Link>
@@ -95,7 +98,7 @@ export default function Navbar() {
                   </>
                 ) : (
                   <>
-                    <Link href="/apply/new" className={navLinkClass('/apply/new')}>{t.navbar.applyVisa}</Link>
+                    <Link href="/destinations" className={navLinkClass('/destinations')}>{t.navbar.applyVisa}</Link>
                     <Link href="/appointments/book" className={navLinkClass('/appointments/book')}>{t.navbar.appointments}</Link>
                     <Link href="/auth/login" className={navLinkClass('/auth/login')}>{t.navbar.login}</Link>
                     <Link
@@ -147,7 +150,7 @@ export default function Navbar() {
           {[
             { href: '/', label: t.navbar.home },
             { href: '/destinations', label: t.navbar.destinations },
-            { href: '/apply/new', label: t.navbar.applyVisa },
+            { href: '/destinations', label: t.navbar.applyVisa },
             { href: '/appointments/book', label: t.navbar.appointments },
             ...(session ? [
               { href: '/dashboard', label: t.navbar.dashboard },
