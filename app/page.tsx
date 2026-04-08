@@ -286,10 +286,47 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Embassy Appointments CTA */}
+      <section className="bg-gradient-to-br from-white to-[#F7FBFA] px-4 py-20 sm:px-6 sm:py-28">
+        <div className="mx-auto max-w-6xl">
+          <AnimateOnScroll delay={1} className="overflow-hidden rounded-[40px] bg-gradient-to-br from-[#00D474] via-[#00D474] to-[#00C465] shadow-xl shadow-[#00D474]/20">
+            <div className="flex flex-col items-center gap-8 p-10 text-center text-white sm:p-16 md:flex-row md:gap-12 md:text-left">
+              <div className="flex-1">
+                <span className="mb-4 inline-block rounded-full bg-white/20 px-3 py-1.5 text-xs font-bold uppercase tracking-wide">
+                  {t.home.embassy.label}
+                </span>
+                <h2 className="mb-4 text-3xl font-black leading-tight sm:text-4xl">
+                  {t.home.appointments.title}
+                </h2>
+                <p className="mb-8 text-base leading-relaxed text-white/90">
+                  {t.home.appointments.description}
+                </p>
+                <Link
+                  href="/appointments/book"
+                  className="inline-flex items-center gap-2.5 rounded-[24px] bg-white px-7 py-3.5 text-sm font-bold text-[#00D474] transition-all duration-200 hover:shadow-lg hover:shadow-black/20 active:scale-95"
+                >
+                  <Calendar size={18} />
+                  {t.home.embassy.cta}
+                </Link>
+              </div>
+              <div className="relative hidden h-64 w-full flex-1 overflow-hidden rounded-[32px] md:block">
+                <Image
+                  src="https://images.pexels.com/photos/1388030/pexels-photo-1388030.jpeg?auto=compress&cs=tinysrgb&w=800"
+                  alt={t.home.destinations.title}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
+            </div>
+          </AnimateOnScroll>
+        </div>
+      </section>
+
       {/* Trust Indicators */}
       <section className="border-b border-[#DDEAE5] bg-white px-4 py-12 sm:px-6 sm:py-16">
         <div className="mx-auto max-w-7xl">
-          <AnimateOnScroll className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+          <AnimateOnScroll delay={2} className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
             {[
               { icon: <Globe2 size={28} />, key: 'visas', label: t.home.destinations.title },
               { icon: <Users size={28} />, key: 'users', label: t.home.footer.partner },
@@ -306,12 +343,12 @@ export default function HomePage() {
                   ) : item.key === 'visas' ? (
                     <>
                       +
-                      <AnimatedCounter value={stats.visas} formatter={formatCompactCount} />
+                      <AnimatedCounter value={Math.floor(stats.visas / 1000)} />K
                     </>
                   ) : item.key === 'users' ? (
                     <>
                       +
-                      <AnimatedCounter value={stats.users} formatter={formatCompactCount} />
+                      <AnimatedCounter value={Math.floor(stats.users / 1000)} />K
                     </>
                   ) : item.key === 'successRate' ? (
                     <>
@@ -546,43 +583,6 @@ export default function HomePage() {
               </AnimateOnScroll>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Embassy Appointments CTA */}
-      <section className="bg-gradient-to-br from-white to-[#F7FBFA] px-4 py-20 sm:px-6 sm:py-28">
-        <div className="mx-auto max-w-6xl">
-          <AnimateOnScroll className="overflow-hidden rounded-[40px] bg-gradient-to-br from-[#00D474] via-[#00D474] to-[#00C465] shadow-xl shadow-[#00D474]/20">
-            <div className="flex flex-col items-center gap-8 p-10 text-center text-white sm:p-16 md:flex-row md:gap-12 md:text-left">
-              <div className="flex-1">
-                <span className="mb-4 inline-block rounded-full bg-white/20 px-3 py-1.5 text-xs font-bold uppercase tracking-wide">
-                  {t.home.embassy.label}
-                </span>
-                <h2 className="mb-4 text-3xl font-black leading-tight sm:text-4xl">
-                  {t.home.appointments.title}
-                </h2>
-                <p className="mb-8 text-base leading-relaxed text-white/90">
-                  {t.home.appointments.description}
-                </p>
-                <Link
-                  href="/appointments/book"
-                  className="inline-flex items-center gap-2.5 rounded-[24px] bg-white px-7 py-3.5 text-sm font-bold text-[#00D474] transition-all duration-200 hover:shadow-lg hover:shadow-black/20 active:scale-95"
-                >
-                  <Calendar size={18} />
-                  {t.home.embassy.cta}
-                </Link>
-              </div>
-              <div className="relative hidden h-64 w-full flex-1 overflow-hidden rounded-[32px] md:block">
-                <Image
-                  src="https://images.pexels.com/photos/1388030/pexels-photo-1388030.jpeg?auto=compress&cs=tinysrgb&w=800"
-                  alt={t.home.destinations.title}
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-              </div>
-            </div>
-          </AnimateOnScroll>
         </div>
       </section>
 

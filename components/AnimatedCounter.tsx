@@ -5,13 +5,13 @@ import { useEffect, useRef, useState } from 'react';
 type AnimatedCounterProps = {
   value: number;
   duration?: number;
-  formatter?: (value: number) => string;
+  formatterAction?: (value: number) => string;
 };
 
 export default function AnimatedCounter({
   value,
   duration = 1000,
-  formatter,
+  formatterAction,
 }: AnimatedCounterProps) {
   const [displayValue, setDisplayValue] = useState(0);
   const [hasAnimated, setHasAnimated] = useState(false);
@@ -45,7 +45,7 @@ export default function AnimatedCounter({
   }, [duration]);
 
   const resolvedValue = hasAnimated ? Math.max(0, value) : displayValue;
-  const output = formatter ? formatter(resolvedValue) : resolvedValue.toString();
+  const output = formatterAction ? formatterAction(resolvedValue) : resolvedValue.toString();
 
   return <span>{output}</span>;
 }
