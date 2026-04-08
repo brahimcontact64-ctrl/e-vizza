@@ -13,15 +13,16 @@ export async function proxy(req: NextRequest) {
     '/apply',
   ];
 
-  const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
+  const isProtected = protectedRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
 
+  // ✅ خلي public pages تمشي عادي
   if (!isProtected) {
-    return NextResponse.next({ request: req });
+    return NextResponse.next();
   }
 
-  // For protected routes: build the response and keep it in sync with any
-  // cookie mutations Supabase makes (e.g. token refresh).
-  const res = NextResponse.next({ request: req });
+  const res = NextResponse.next();
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,21 +41,24 @@ export async function proxy(req: NextRequest) {
     }
   );
 
+  // 🔥 هذا هو الإصلاح الحقيقي
   const {
-    data: { session },
+    data: { user },
     error,
-  } = await supabase.auth.getSession();
+  } = await supabase.auth.getUser();
 
   if (error) {
-    console.error('Proxy auth session error:', error.message);
+    console.error('Proxy auth error:', error.message);
   }
-
-  const user = session?.user;
 
   if (!user) {
     const loginUrl = req.nextUrl.clone();
     loginUrl.pathname = '/auth/login';
-    loginUrl.searchParams.set('redirect', `${pathname}${req.nextUrl.search}`);
+    loginUrl.searchParams.set(
+      'redirect',
+      `${pathname}${req.nextUrl.search}`
+    );
+
     return NextResponse.redirect(loginUrl);
   }
 
