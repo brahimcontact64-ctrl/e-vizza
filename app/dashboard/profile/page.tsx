@@ -44,8 +44,11 @@ export default function ProfilePage() {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update(formData)
-        .eq('id', session.user.id);
+        .upsert({
+          id: session.user.id,
+          email: session.user.email,
+          ...formData,
+        }, { onConflict: 'id' });
 
       if (error) throw error;
 

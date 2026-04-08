@@ -39,22 +39,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const ensureProfileForAuthenticatedUser = useCallback(async (authenticatedUser: User) => {
     setProfileLoading(true);
 
+    if (profile?.id !== authenticatedUser.id) {
+      setProfile(null);
+    }
+
     try {
       const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', authenticatedUser.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
-        const noProfileFound =
-          profileError.code === 'PGRST116' ||
-          profileError.message.toLowerCase().includes('no rows');
+        throw profileError;
+      }
 
-        if (!noProfileFound) {
-          throw profileError;
-        }
-
+      if (!existingProfile) {
         const { error: insertError } = await supabase.from('profiles').insert({
           id: authenticatedUser.id,
           email: authenticatedUser.email,
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           avatar_url: authenticatedUser.user_metadata?.avatar_url,
         });
 
-        if (insertError) {
+        if (insertError && insertError.code !== '23505') {
           throw insertError;
         }
 
@@ -70,24 +70,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .from('profiles')
           .select('*')
           .eq('id', authenticatedUser.id)
-          .single();
+          .maybeSingle();
 
         if (createdProfileError) {
           throw createdProfileError;
         }
 
-        setProfile(createdProfile as Profile);
+        setProfile((createdProfile as Profile | null) ?? null);
         return;
       }
 
       setProfile(existingProfile as Profile);
     } catch (error) {
       console.error('Profile ensure error:', error);
-      setProfile(null);
     } finally {
       setProfileLoading(false);
     }
-  }, []);
+  }, [profile?.id]);
 
   const clearAuthState = useCallback(() => {
     setSession(null);
@@ -196,9 +195,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data?.session) {
-        setSession(data.session);
-        setUser(data.session.user);
-        await ensureProfileForAuthenticatedUser(data.session.user);
+        await hydrateFromSession(data.session);
       }
 
       return {
