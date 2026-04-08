@@ -13,7 +13,7 @@ import { Mail, Pencil, ShieldCheck } from 'lucide-react';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { session, profile, refreshUser } = useAuth();
+  const { session, profile, refreshUser, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -69,6 +69,17 @@ export default function ProfilePage() {
     setEditing(false);
     setMessage({ type: '', text: '' });
   };
+
+  if (authLoading) {
+    return (
+      <Container size="md" className="py-10">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 w-1/3 rounded bg-[#E8F1EE]" />
+          <div className="h-40 rounded-xl bg-[#E8F1EE]" />
+        </div>
+      </Container>
+    );
+  }
 
   if (!session) {
     return (

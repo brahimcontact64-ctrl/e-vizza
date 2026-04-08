@@ -84,10 +84,14 @@ export default function ApplyNewPage() {
   }, [session, authLoading, router, visaId]);
 
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
     if (visaId) {
       fetchVisa();
     }
-  }, [visaId]);
+  }, [visaId, authLoading]);
 
   useEffect(() => {
     const fetchPassport = async () => {

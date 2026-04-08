@@ -52,11 +52,17 @@ export default function AppointmentsPage() {
 
   useEffect(() => {
     if (authLoading) return
+
+    if (!session?.user) {
+      setLoading(false)
+      return
+    }
+
     fetchAppointments()
   }, [session, authLoading, fetchAppointments])
 
   useEffect(() => {
-    if (!session?.user) return
+    if (authLoading || !session?.user) return
 
     const channel = supabase
       .channel(`realtime-appointments-list-${session.user.id}`)
@@ -77,7 +83,7 @@ export default function AppointmentsPage() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [session, fetchAppointments])
+  }, [session, authLoading, fetchAppointments])
 
   if (loading) {
 

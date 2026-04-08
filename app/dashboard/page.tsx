@@ -54,11 +54,15 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    fetchData();
+    if (session?.user) {
+      fetchData();
+      return;
+    }
+    setLoading(false);
   }, [session, authLoading, fetchData]);
 
   useEffect(() => {
-    if (!session?.user) return;
+    if (authLoading || !session?.user) return;
 
     const channel = supabase
       .channel(`realtime-apps-${session.user.id}`)
@@ -91,7 +95,7 @@ export default function DashboardPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [session, fetchData]);
+  }, [session, authLoading, fetchData]);
 
   const getFlag = (country?: string) => {
     const flags: Record<string, string> = {

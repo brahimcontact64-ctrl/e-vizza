@@ -54,12 +54,17 @@ export default function ApplicationsPage() {
 
     if (authLoading) return
 
+    if (!session?.user) {
+      setLoading(false)
+      return
+    }
+
     fetchApplications()
 
   }, [session, authLoading, fetchApplications])
 
   useEffect(() => {
-    if (!session?.user) return
+    if (authLoading || !session?.user) return
 
     const channel = supabase
       .channel(`realtime-apps-list-${session.user.id}`)
@@ -80,7 +85,7 @@ export default function ApplicationsPage() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [session, fetchApplications])
+  }, [session, authLoading, fetchApplications])
 
   if (loading) {
 

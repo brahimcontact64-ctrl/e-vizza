@@ -235,7 +235,7 @@ const verifyPassport = async (file: File) => {
   }, [fetchQuota])
 
   useEffect(() => {
-    if (!session?.user) return
+    if (authLoading || !session?.user) return
 
     const channel = supabase
       .channel(`realtime-appointments-quota-${session.user.id}`)
@@ -251,7 +251,7 @@ const verifyPassport = async (file: File) => {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [session, fetchQuota])
+  }, [session, authLoading, fetchQuota])
 
   const submit = async () => {
     if (!session?.user) {
