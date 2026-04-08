@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -40,6 +40,11 @@ export default function HomePage() {
   const [selectedNationality, setSelectedNationality] = useState('');
   const [selectedDestination, setSelectedDestination] = useState('');
   const [selectedVisa, setSelectedVisa] = useState<Visa | null>(null);
+  const [stats, setStats] = useState({
+    visas: 0,
+    users: 0,
+    successRate: 98,
+  });
   const currentYear = new Date().getFullYear();
 
   useEffect(() => {
@@ -61,6 +66,39 @@ export default function HomePage() {
       setLoading(false);
     }
   };
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const [visasRes, usersRes, totalAppsRes, approvedAppsRes] = await Promise.all([
+        supabase
+          .from('visas')
+          .select('*', { count: 'exact', head: true })
+          .eq('is_active', true),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }),
+        supabase.from('applications').select('*', { count: 'exact', head: true }),
+        supabase
+          .from('applications')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'approved'),
+      ]);
+
+      const visasCount = visasRes.count ?? 0;
+      const usersCount = usersRes.count ?? 0;
+      const totalApplications = totalAppsRes.count ?? 0;
+      const approvedApplications = approvedAppsRes.count ?? 0;
+
+      const successRate =
+        totalApplications > 0 ? Math.round((approvedApplications / totalApplications) * 100) : 98;
+
+      setStats({
+        visas: visasCount,
+        users: usersCount,
+        successRate,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
 
   const getCountryImageByName = (countryName: string): string => {
     const imageMap: { [key: string]: string } = {
@@ -111,6 +149,21 @@ export default function HomePage() {
     const visaMatch = visas.find((visa) => visa.country_name === selectedDestination) ?? null;
     setSelectedVisa(visaMatch);
   }, [selectedDestination, visas]);
+
+  useEffect(() => {
+    fetchStats();
+
+    const channel = supabase
+      .channel('stats')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'applications' }, fetchStats)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, fetchStats)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'visas' }, fetchStats)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchStats]);
 
   const flagByCountry = (country: string) => {
     const map: Record<string, string> = {
@@ -250,10 +303,10 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl">
           <AnimateOnScroll className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
             {[
-              { icon: <Globe2 size={28} />, value: '200+', label: t.home.destinations.title },
-              { icon: <Users size={28} />, value: '50k+', label: t.home.footer.partner },
+              { icon: <Globe2 size={28} />, value: `+${stats.visas}`, label: t.home.destinations.title },
+              { icon: <Users size={28} />, value: `+${stats.users}`, label: t.home.footer.partner },
               { icon: <Zap size={28} />, value: '24h', label: t.home.features.fast.title },
-              { icon: <TrendingUp size={28} />, value: '98%', label: t.home.card.verified },
+              { icon: <TrendingUp size={28} />, value: `${stats.successRate}%`, label: t.home.card.verified },
             ].map((item, idx) => (
               <div key={idx} className="group rounded-[24px] border border-[#DDEAE5] bg-gradient-to-br from-white to-[#F7FBFA] p-5 text-center transition-all duration-200 hover:border-[#00D474] hover:shadow-lg hover:shadow-[#00D474]/10 sm:p-6">
                 <div className="mx-auto mb-3.5 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#00D474]/10 text-[#00D474] transition-all duration-200 group-hover:scale-110">
