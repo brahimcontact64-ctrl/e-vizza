@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { Visa } from '@/types/database';
@@ -32,11 +33,13 @@ import {
 } from 'lucide-react';
 
 export default function HomePage() {
+  const router = useRouter();
   const { t, isRTL } = useLanguage();
   const [visas, setVisas] = useState<Visa[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedNationality, setSelectedNationality] = useState('');
   const [selectedDestination, setSelectedDestination] = useState('');
+  const [selectedVisa, setSelectedVisa] = useState<Visa | null>(null);
   const currentYear = new Date().getFullYear();
 
   useEffect(() => {
@@ -92,6 +95,23 @@ export default function HomePage() {
     }
   }, [countryOptions, selectedDestination, selectedNationality]);
 
+  useEffect(() => {
+    if (visas.length > 0 && !selectedVisa) {
+      setSelectedVisa(visas[0]);
+      setSelectedDestination(visas[0].country_name);
+    }
+  }, [visas, selectedVisa]);
+
+  useEffect(() => {
+    if (!selectedDestination) {
+      setSelectedVisa(null);
+      return;
+    }
+
+    const visaMatch = visas.find((visa) => visa.country_name === selectedDestination) ?? null;
+    setSelectedVisa(visaMatch);
+  }, [selectedDestination, visas]);
+
   const flagByCountry = (country: string) => {
     const map: Record<string, string> = {
       Algeria: '🇩🇿',
@@ -120,7 +140,7 @@ export default function HomePage() {
         </div>
 
         <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-center px-4 pb-20 pt-8 sm:px-6 lg:px-8">
-          <AnimateOnScroll className="mb-6 text-center">
+          <AnimateOnScroll className={`mb-6 ${isRTL ? 'text-right' : 'text-center'}`}>
             <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-[#00D474]/20 bg-[#00D474]/10 px-4 py-2 text-xs font-semibold text-[#0B3948] sm:text-sm">
               <Sparkles size={14} className="text-[#00D474]" />
               <span>{t.home.features.subtitle}</span>
@@ -136,14 +156,10 @@ export default function HomePage() {
           {/* Visa Finder Form */}
           <AnimateOnScroll delay={1} className="w-full max-w-2xl">
             <div className="rounded-[32px] border border-[#DDEAE5] bg-white p-6 shadow-lg shadow-black/5 sm:p-8">
-              <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6B7C85]">
-                {t.home.card.startingFrom}
-              </div>
-              
               <div className="grid gap-4 sm:grid-cols-3 mb-6">
                 {/* From Field - Algeria Only */}
                 <div className="relative">
-                  <label className={`mb-3 block text-xs font-bold uppercase tracking-wider text-[#0B3948] ${isRTL ? 'text-right' : 'text-left'}`}>
+                  <label className={`mb-3 block text-xs font-bold tracking-wider text-[#0B3948] ${isRTL ? 'text-right' : 'text-left'}`}>
                     {t.home.card.startingFrom}
                   </label>
                   <div className="h-14 w-full rounded-[24px] border border-[#DDEAE5] bg-[#F7FBFA] px-4 text-sm font-semibold text-[#0B3948] flex items-center gap-2.5 cursor-not-allowed">
@@ -154,17 +170,22 @@ export default function HomePage() {
 
                 {/* Destination Field */}
                 <div className="relative">
-                  <label className={`mb-3 block text-xs font-bold uppercase tracking-wider text-[#0B3948] ${isRTL ? 'text-right' : 'text-left'}`}>
+                  <label className={`mb-3 block text-xs font-bold tracking-wider text-[#0B3948] ${isRTL ? 'text-right' : 'text-left'}`}>
                     {t.home.destinations.title}
                   </label>
                   <div className="relative">
-                    <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-lg">
+                    <span className={`pointer-events-none absolute inset-y-0 flex items-center text-lg ${isRTL ? 'right-4' : 'left-4'}`}>
                       {flagByCountry(selectedDestination)}
                     </span>
                     <select
                       value={selectedDestination}
-                      onChange={(e) => setSelectedDestination(e.target.value)}
-                      className="h-14 w-full appearance-none rounded-[24px] border border-[#DDEAE5] bg-white pl-14 pr-10 text-sm font-semibold text-[#0B3948] outline-none transition-all duration-200 hover:border-[#00D474] focus:border-[#00D474] focus:ring-2 focus:ring-[#00D474]/20"
+                      onChange={(e) => {
+                        const destination = e.target.value;
+                        setSelectedDestination(destination);
+                        const visaMatch = visas.find((visa) => visa.country_name === destination) ?? null;
+                        setSelectedVisa(visaMatch);
+                      }}
+                      className={`h-14 w-full appearance-none rounded-[24px] border border-[#DDEAE5] bg-white text-sm font-semibold text-[#0B3948] outline-none transition-all duration-200 hover:border-[#00D474] focus:border-[#00D474] focus:ring-2 focus:ring-[#00D474]/20 ${isRTL ? 'pr-14 pl-10 text-right' : 'pl-14 pr-10 text-left'}`}
                     >
                       {countryOptions.map((country) => (
                         <option key={`destination-${country}`} value={country}>
@@ -172,19 +193,24 @@ export default function HomePage() {
                         </option>
                       ))}
                     </select>
-                    <ChevronDown size={18} className="pointer-events-none absolute inset-y-0 right-3 my-auto text-[#6B7C85]" />
+                    <ChevronDown size={18} className={`pointer-events-none absolute inset-y-0 my-auto text-[#6B7C85] ${isRTL ? 'left-3' : 'right-3'}`} />
                   </div>
                 </div>
 
                 {/* CTA Button */}
                 <div className="flex flex-col justify-end">
-                  <Link
-                    href="/destinations"
-                    className="inline-flex h-14 items-center justify-center gap-2.5 rounded-[24px] bg-gradient-to-r from-[#00D474] to-[#00D474]/80 px-6 text-sm font-bold text-white shadow-lg shadow-[#00D474]/30 transition-all duration-200 hover:shadow-xl hover:shadow-[#00D474]/40 active:scale-95"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!selectedVisa) return;
+                      router.push(`/apply/new?visa_id=${selectedVisa.id}`);
+                    }}
+                    disabled={!selectedVisa}
+                    className="inline-flex h-14 items-center justify-center gap-2.5 rounded-[24px] bg-gradient-to-r from-[#00D474] to-[#00D474]/80 px-6 text-sm font-bold text-white shadow-lg shadow-[#00D474]/30 transition-all duration-200 hover:shadow-xl hover:shadow-[#00D474]/40 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-lg"
                   >
                     {t.home.hero.cta}
                     <ArrowRight size={18} className={`${isRTL ? 'rotate-180' : ''}`} />
-                  </Link>
+                  </button>
                 </div>
               </div>
 
@@ -444,7 +470,7 @@ export default function HomePage() {
                     ))}
                   </div>
                   <p className="mb-6 text-sm leading-relaxed text-[#6B7C85]">
-                    "{t.home.features.subtitle}"
+                    &ldquo;{t.home.features.subtitle}&rdquo;
                   </p>
                   <div className="flex items-center gap-3 border-t border-[#DDEAE5] pt-4">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#00D474] to-[#00D474]/80 text-xs font-bold text-white">
