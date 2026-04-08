@@ -5,23 +5,16 @@ import { createServerClient } from '@supabase/ssr';
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // ✅ PUBLIC ROUTES
-  const publicRoutes = [
-    '/',
-    '/auth/login',
-    '/auth/callback',
-    '/destinations',
-  ];
-
-  const isPublic = publicRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
-
-  if (isPublic) {
+  // 🟢 مهم جدًا: استثناء كل auth routes
+  if (
+    pathname.startsWith('/auth') ||
+    pathname === '/' ||
+    pathname.startsWith('/destinations')
+  ) {
     return NextResponse.next();
   }
 
-  // ✅ PROTECTED ROUTES
+  // 🟢 فقط هذه routes محمية
   const protectedRoutes = [
     '/dashboard',
     '/applications',
@@ -59,10 +52,16 @@ export async function proxy(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
 
+  // ❌ إذا ما عندوش session → يروح login
   if (!session?.user) {
     const loginUrl = req.nextUrl.clone();
     loginUrl.pathname = '/auth/login';
-    loginUrl.searchParams.set('redirect', pathname);
+
+    // 🧠 مهم: ما نضيفوش redirect إذا راهو أصلاً login
+    if (!pathname.startsWith('/auth/login')) {
+      loginUrl.searchParams.set('redirect', pathname);
+    }
+
     return NextResponse.redirect(loginUrl);
   }
 
