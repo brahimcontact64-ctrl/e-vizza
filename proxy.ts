@@ -17,12 +17,11 @@ export async function proxy(req: NextRequest) {
     pathname.startsWith(route)
   );
 
-  // ✅ خلي public pages تمشي عادي
   if (!isProtected) {
-    return NextResponse.next();
+    return NextResponse.next({ request: req });
   }
 
-  const res = NextResponse.next();
+  const res = NextResponse.next({ request: req });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -41,17 +40,16 @@ export async function proxy(req: NextRequest) {
     }
   );
 
-  // 🔥 هذا هو الإصلاح الحقيقي
   const {
-    data: { user },
+    data: { session },
     error,
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getSession();
 
   if (error) {
     console.error('Proxy auth error:', error.message);
   }
 
-  if (!user) {
+  if (!session?.user) {
     const loginUrl = req.nextUrl.clone();
     loginUrl.pathname = '/auth/login';
     loginUrl.searchParams.set(

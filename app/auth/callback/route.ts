@@ -31,10 +31,9 @@ export async function GET(request: NextRequest) {
     }
   );
 
-  // 🔥 أهم سطر
-  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
 
-  if (error || !data.session) {
+  if (error) {
     console.error('OAuth error:', error);
     return NextResponse.redirect(`${origin}/auth/login`);
   }
