@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { Application, VisaAppointment } from '@/types/database';
 import Container from '@/components/Container';
 import StatusLabel from '@/components/StatusLabel';
@@ -17,6 +18,18 @@ export default function DashboardPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [appointments, setAppointments] = useState<VisaAppointment[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const mergeRecentApplications = useCallback((rows: Application[]) => {
+    return [...rows]
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+      .slice(0, 3);
+  }, []);
+
+  const mergeRecentAppointments = useCallback((rows: VisaAppointment[]) => {
+    return [...rows]
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+      .slice(0, 3);
+  }, []);
 
   const fetchData = useCallback(async () => {
     if (!session?.user) {
@@ -52,6 +65,24 @@ export default function DashboardPage() {
     }
   }, [session]);
 
+  const fetchSingleApplication = useCallback(async (applicationId: string) => {
+    if (!session?.user) return null;
+
+    const { data, error } = await supabase
+      .from('applications')
+      .select('*,visa:visas(*)')
+      .eq('id', applicationId)
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching realtime dashboard application row:', error);
+      return null;
+    }
+
+    return data as Application | null;
+  }, [session]);
+
   useEffect(() => {
     if (authLoading) return;
     if (session?.user) {
@@ -61,41 +92,41 @@ export default function DashboardPage() {
     setLoading(false);
   }, [session, authLoading, fetchData]);
 
-  useEffect(() => {
-    if (authLoading || !session?.user) return;
+  useRealtimeSubscription<{ id: string }>('applications', {
+    enabled: !authLoading && Boolean(session?.user),
+    filter: session?.user ? `user_id=eq.${session.user.id}` : undefined,
+    channelName: session?.user ? `realtime-apps-${session.user.id}` : undefined,
+    onInsert: async (row) => {
+      const fullRow = await fetchSingleApplication(row.id);
+      if (!fullRow) return;
 
-    const channel = supabase
-      .channel(`realtime-apps-${session.user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'applications',
-          filter: `user_id=eq.${session.user.id}`,
-        },
-        () => {
-          fetchData();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'visa_appointments',
-          filter: `user_id=eq.${session.user.id}`,
-        },
-        () => {
-          fetchData();
-        }
-      )
-      .subscribe();
+      setApplications((previous) => mergeRecentApplications([...previous.filter((app) => app.id !== fullRow.id), fullRow]));
+    },
+    onUpdate: async (row) => {
+      const fullRow = await fetchSingleApplication(row.id);
+      if (!fullRow) return;
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [session, authLoading, fetchData]);
+      setApplications((previous) => mergeRecentApplications([...previous.filter((app) => app.id !== fullRow.id), fullRow]));
+    },
+    onDelete: (row) => {
+      setApplications((previous) => previous.filter((app) => app.id !== row.id));
+    },
+  });
+
+  useRealtimeSubscription<VisaAppointment>('visa_appointments', {
+    enabled: !authLoading && Boolean(session?.user),
+    filter: session?.user ? `user_id=eq.${session.user.id}` : undefined,
+    channelName: session?.user ? `realtime-appts-${session.user.id}` : undefined,
+    onInsert: (row) => {
+      setAppointments((previous) => mergeRecentAppointments([...previous.filter((item) => item.id !== row.id), row]));
+    },
+    onUpdate: (row) => {
+      setAppointments((previous) => mergeRecentAppointments([...previous.filter((item) => item.id !== row.id), row]));
+    },
+    onDelete: (row) => {
+      setAppointments((previous) => previous.filter((item) => item.id !== row.id));
+    },
+  });
 
   const getFlag = (country?: string) => {
     const flags: Record<string, string> = {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
@@ -11,6 +11,7 @@ import Badge from '@/components/Badge';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { translateVisaType, translateEntries } from '@/lib/visaTranslations';
 import { supabase } from '@/lib/supabase';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { Clock, Search } from 'lucide-react';
 
 interface Visa {
@@ -35,6 +36,25 @@ export default function DestinationsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const normalizeVisas = useCallback((rows: Visa[]) => {
+    return rows
+      .filter((row) => row.is_active)
+      .sort((a, b) => a.country_name.localeCompare(b.country_name));
+  }, []);
+
+  const applyVisaRowChange = useCallback((incomingVisa: Visa | null) => {
+    if (!incomingVisa) return;
+
+    setVisas((previous) => {
+      const withoutIncoming = previous.filter((visa) => visa.id !== incomingVisa.id);
+      if (!incomingVisa.is_active) {
+        return normalizeVisas(withoutIncoming);
+      }
+
+      return normalizeVisas([...withoutIncoming, incomingVisa]);
+    });
+  }, [normalizeVisas]);
+
   useEffect(() => {
     fetchVisas();
   }, []);
@@ -54,8 +74,9 @@ export default function DestinationsPage() {
       if (error) throw error;
 
       if (data) {
-        setVisas(data);
-        setFilteredVisas(data);
+        const normalized = normalizeVisas(data);
+        setVisas(normalized);
+        setFilteredVisas(normalized);
       }
     } catch (error) {
       console.error('Error fetching visas:', error);
@@ -77,6 +98,18 @@ export default function DestinationsPage() {
 
     setFilteredVisas(filtered);
   };
+
+  useRealtimeSubscription<Visa>('visas', {
+    onInsert: (row) => {
+      applyVisaRowChange(row);
+    },
+    onUpdate: (row) => {
+      applyVisaRowChange(row);
+    },
+    onDelete: (row) => {
+      applyVisaRowChange({ ...row, is_active: false });
+    },
+  });
 
   const getCountryFlag = (countryCode: string): string => {
     const codePoints = countryCode

@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { translateEntries, translateDescription, translateRequirement } from '@/lib/visaTranslations';
 import { supabase } from '@/lib/supabase';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import Navbar from '@/components/Navbar';
 import Container from '@/components/Container';
 import Card from '@/components/Card';
@@ -28,6 +29,7 @@ interface Visa {
   requirements: string[];
   description: string | null;
   image_url: string | null;
+  is_active?: boolean;
 }
 
 export default function VisaDetailPage() {
@@ -36,19 +38,22 @@ export default function VisaDetailPage() {
   const { t, isRTL, language } = useLanguage();
   const [visa, setVisa] = useState<Visa | null>(null);
   const [loading, setLoading] = useState(true);
+  const visaId = useMemo(() => (typeof params.id === 'string' ? params.id : ''), [params.id]);
 
   useEffect(() => {
-    if (params.id) {
+    if (visaId) {
       fetchVisa();
     }
-  }, [params.id]);
+  }, [visaId]);
 
-  const fetchVisa = async () => {
+  const fetchVisa = useCallback(async () => {
+    if (!visaId) return;
+
     try {
       const { data, error } = await supabase
         .from('visas')
         .select('*')
-        .eq('id', params.id)
+        .eq('id', visaId)
         .eq('is_active', true)
         .maybeSingle();
 
@@ -59,7 +64,31 @@ export default function VisaDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [visaId]);
+
+  useRealtimeSubscription<Visa>('visas', {
+    enabled: Boolean(visaId),
+    filter: visaId ? `id=eq.${visaId}` : undefined,
+    onInsert: (row) => {
+      if (row.is_active === false) {
+        setVisa(null);
+        return;
+      }
+
+      setVisa(row);
+    },
+    onUpdate: (row) => {
+      if (row.is_active === false) {
+        setVisa(null);
+        return;
+      }
+
+      setVisa(row);
+    },
+    onDelete: () => {
+      setVisa(null);
+    },
+  });
 
   const getCountryFlag = (countryCode: string): string => {
     const codePoints = countryCode

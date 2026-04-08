@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { supabase } from '@/lib/supabase'
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription'
 import { Application } from '@/types/database'
 import Container from '@/components/Container'
 import StatusLabel from '@/components/StatusLabel'
@@ -17,6 +18,10 @@ export default function ApplicationsPage() {
 
   const [applications, setApplications] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
+
+  const mergeApplications = useCallback((rows: Application[]) => {
+    return [...rows].sort((a, b) => b.created_at.localeCompare(a.created_at))
+  }, [])
 
   const fetchApplications = useCallback(async () => {
 
@@ -50,6 +55,24 @@ export default function ApplicationsPage() {
 
   }, [session])
 
+  const fetchSingleApplication = useCallback(async (applicationId: string) => {
+    if (!session?.user) return null
+
+    const { data, error } = await supabase
+      .from('applications')
+      .select('*, visa:visas(*)')
+      .eq('id', applicationId)
+      .eq('user_id', session.user.id)
+      .maybeSingle()
+
+    if (error) {
+      console.error('Error fetching realtime application row:', error)
+      return null
+    }
+
+    return data as Application | null
+  }, [session])
+
   useEffect(() => {
 
     if (authLoading) return
@@ -63,29 +86,26 @@ export default function ApplicationsPage() {
 
   }, [session, authLoading, fetchApplications])
 
-  useEffect(() => {
-    if (authLoading || !session?.user) return
+  useRealtimeSubscription<{ id: string; created_at: string }>('applications', {
+    enabled: !authLoading && Boolean(session?.user),
+    filter: session?.user ? `user_id=eq.${session.user.id}` : undefined,
+    channelName: session?.user ? `realtime-apps-list-${session.user.id}` : undefined,
+    onInsert: async (row) => {
+      const fullRow = await fetchSingleApplication(row.id)
+      if (!fullRow) return
 
-    const channel = supabase
-      .channel(`realtime-apps-list-${session.user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'applications',
-          filter: `user_id=eq.${session.user.id}`,
-        },
-        () => {
-          fetchApplications()
-        }
-      )
-      .subscribe()
+      setApplications((previous) => mergeApplications([...previous.filter((app) => app.id !== fullRow.id), fullRow]))
+    },
+    onUpdate: async (row) => {
+      const fullRow = await fetchSingleApplication(row.id)
+      if (!fullRow) return
 
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [session, authLoading, fetchApplications])
+      setApplications((previous) => mergeApplications([...previous.filter((app) => app.id !== fullRow.id), fullRow]))
+    },
+    onDelete: (row) => {
+      setApplications((previous) => previous.filter((app) => app.id !== row.id))
+    },
+  })
 
   if (loading) {
 

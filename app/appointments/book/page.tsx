@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { supabase } from '@/lib/supabase'
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription'
 import Navbar from '@/components/Navbar'
 import Container from '@/components/Container'
 import Card from '@/components/Card'
@@ -61,6 +62,14 @@ type QuotaInfo = {
   waiting_list_remaining: number
   total_requests: number
   total_remaining: number
+}
+
+type QuotaRow = {
+  id: string
+  country: string
+  month: number
+  year: number
+  status: string
 }
 
 export default function BookAppointmentPage() {
@@ -224,34 +233,104 @@ const verifyPassport = async (file: File) => {
     }
   }, [country, month, parseSelectedMonth])
 
+  const selectedPeriod = useMemo(() => {
+    if (!month) return null
+
+    try {
+      return parseSelectedMonth(month)
+    } catch {
+      return null
+    }
+  }, [month, parseSelectedMonth])
+
+  const isRowInSelectedQuota = useCallback((row: QuotaRow | null | undefined) => {
+    if (!row || !country || !selectedPeriod) return false
+
+    return (
+      row.country === country &&
+      row.month === selectedPeriod.parsedMonth &&
+      row.year === selectedPeriod.parsedYear
+    )
+  }, [country, selectedPeriod])
+
+  const applyQuotaDelta = useCallback((status: string, delta: 1 | -1) => {
+    setQuotaInfo((previous) => {
+      if (!previous) return previous
+
+      const next = {
+        ...previous,
+        priority_slots_used: previous.priority_slots_used,
+        waiting_list_used: previous.waiting_list_used,
+        total_requests: Math.max(0, previous.total_requests + delta),
+      }
+
+      if (status === 'priority_request') {
+        next.priority_slots_used = Math.max(0, previous.priority_slots_used + delta)
+      }
+
+      if (status === 'waiting_list') {
+        next.waiting_list_used = Math.max(0, previous.waiting_list_used + delta)
+      }
+
+      next.priority_slots_remaining = Math.max(0, 5 - next.priority_slots_used)
+      next.waiting_list_remaining = Math.max(0, 10 - next.waiting_list_used)
+      next.total_remaining = Math.max(0, 15 - next.total_requests)
+
+      return next
+    })
+  }, [])
+
   useEffect(() => {
     fetchQuota()
-
-    const interval = setInterval(() => {
-      fetchQuota()
-    }, 5000)
-
-    return () => clearInterval(interval)
   }, [fetchQuota])
 
-  useEffect(() => {
-    if (authLoading || !session?.user) return
+  useRealtimeSubscription('visa_appointments', {
+    enabled: !authLoading && Boolean(session?.user),
+    channelName: session?.user ? `realtime-appointments-quota-${session.user.id}` : undefined,
+    onInsert: (row) => {
+      const quotaRow = row as QuotaRow
 
-    const channel = supabase
-      .channel(`realtime-appointments-quota-${session.user.id}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'visa_appointments' },
-        () => {
-          fetchQuota()
-        }
-      )
-      .subscribe()
+      if (!isRowInSelectedQuota(quotaRow)) return
+      if (!quotaInfo) {
+        fetchQuota()
+        return
+      }
 
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [session, authLoading, fetchQuota])
+      applyQuotaDelta(quotaRow.status, 1)
+    },
+    onUpdate: (row, previousRow) => {
+      const nextRow = row as QuotaRow
+      const oldRow = previousRow as QuotaRow
+
+      const oldMatches = isRowInSelectedQuota(oldRow)
+      const nextMatches = isRowInSelectedQuota(nextRow)
+
+      if (!oldMatches && !nextMatches) return
+      if (!quotaInfo) {
+        fetchQuota()
+        return
+      }
+
+      if (oldMatches) {
+        applyQuotaDelta(oldRow.status, -1)
+      }
+
+      if (nextMatches) {
+        applyQuotaDelta(nextRow.status, 1)
+      }
+    },
+    onDelete: (row) => {
+      const quotaRow = row as QuotaRow
+
+      if (!isRowInSelectedQuota(quotaRow)) return
+      if (!quotaInfo) {
+        fetchQuota()
+        return
+      }
+
+      applyQuotaDelta(quotaRow.status, -1)
+    },
+  })
 
   const submit = async () => {
     if (!session?.user) {

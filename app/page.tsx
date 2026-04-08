@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -11,6 +11,7 @@ import Navbar from '@/components/Navbar';
 import AnimateOnScroll from '@/components/AnimateOnScroll';
 import AnimatedCounter from '@/components/AnimatedCounter';
 import { useStats } from '@/hooks/useStats';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import {
   ArrowRight,
   Clock,
@@ -45,6 +46,26 @@ export default function HomePage() {
   const [selectedVisa, setSelectedVisa] = useState<Visa | null>(null);
   const currentYear = new Date().getFullYear();
 
+  const normalizeVisas = useCallback((rows: Visa[]) => {
+    return rows
+      .filter((row) => row.is_active)
+      .sort((a, b) => a.country_name.localeCompare(b.country_name))
+      .slice(0, 6);
+  }, []);
+
+  const applyVisaRowChange = useCallback((incomingVisa: Visa | null) => {
+    if (!incomingVisa) return;
+
+    setVisas((previous) => {
+      const withoutIncoming = previous.filter((visa) => visa.id !== incomingVisa.id);
+      if (!incomingVisa.is_active) {
+        return normalizeVisas(withoutIncoming);
+      }
+
+      return normalizeVisas([...withoutIncoming, incomingVisa]);
+    });
+  }, [normalizeVisas]);
+
   useEffect(() => {
     fetchVisas();
   }, []);
@@ -57,13 +78,25 @@ export default function HomePage() {
         .eq('is_active', true)
         .order('country_name')
         .limit(6);
-      if (data) setVisas(data);
+      if (data) setVisas(normalizeVisas(data));
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
   };
+
+  useRealtimeSubscription<Visa>('visas', {
+    onInsert: (row) => {
+      applyVisaRowChange(row);
+    },
+    onUpdate: (row) => {
+      applyVisaRowChange(row);
+    },
+    onDelete: (row) => {
+      applyVisaRowChange({ ...row, is_active: false });
+    },
+  });
 
   const getCountryImageByName = (countryName: string): string => {
     const imageMap: { [key: string]: string } = {

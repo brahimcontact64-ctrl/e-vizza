@@ -53,6 +53,8 @@ export async function GET() {
     return NextResponse.json({
       visas,
       users,
+      totalApplications,
+      approvedApplications,
       successRate,
       processingTime: FALLBACK_STATS.processingTime,
     });

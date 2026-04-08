@@ -3,6 +3,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { Profile } from '@/types/database';
 
 interface AuthContextType {
@@ -269,6 +270,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     profile?.role === 'admin' || profile?.role === 'super_admin';
 
   const isSuperAdmin = profile?.role === 'super_admin';
+
+  useRealtimeSubscription<Profile>('profiles', {
+    enabled: Boolean(user?.id),
+    filter: user?.id ? `id=eq.${user.id}` : undefined,
+    channelName: user?.id ? `realtime-profile-${user.id}` : undefined,
+    onInsert: (row) => {
+      setProfile(row);
+    },
+    onUpdate: (row) => {
+      setProfile(row);
+    },
+    onDelete: () => {
+      setProfile(null);
+    },
+  });
 
   return (
     <AuthContext.Provider

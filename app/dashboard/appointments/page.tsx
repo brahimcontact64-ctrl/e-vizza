@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { supabase } from '@/lib/supabase'
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription'
 import { VisaAppointment } from '@/types/database'
 import Container from '@/components/Container'
 import StatusLabel from '@/components/StatusLabel'
@@ -17,6 +18,10 @@ export default function AppointmentsPage() {
 
   const [appointments, setAppointments] = useState<VisaAppointment[]>([])
   const [loading, setLoading] = useState(true)
+
+  const mergeAppointments = useCallback((rows: VisaAppointment[]) => {
+    return [...rows].sort((a, b) => b.created_at.localeCompare(a.created_at))
+  }, [])
 
   const fetchAppointments = useCallback(async () => {
 
@@ -61,29 +66,20 @@ export default function AppointmentsPage() {
     fetchAppointments()
   }, [session, authLoading, fetchAppointments])
 
-  useEffect(() => {
-    if (authLoading || !session?.user) return
-
-    const channel = supabase
-      .channel(`realtime-appointments-list-${session.user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'visa_appointments',
-          filter: `user_id=eq.${session.user.id}`,
-        },
-        () => {
-          fetchAppointments()
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [session, authLoading, fetchAppointments])
+  useRealtimeSubscription<VisaAppointment>('visa_appointments', {
+    enabled: !authLoading && Boolean(session?.user),
+    filter: session?.user ? `user_id=eq.${session.user.id}` : undefined,
+    channelName: session?.user ? `realtime-appointments-list-${session.user.id}` : undefined,
+    onInsert: (row) => {
+      setAppointments((previous) => mergeAppointments([...previous.filter((item) => item.id !== row.id), row]))
+    },
+    onUpdate: (row) => {
+      setAppointments((previous) => mergeAppointments([...previous.filter((item) => item.id !== row.id), row]))
+    },
+    onDelete: (row) => {
+      setAppointments((previous) => previous.filter((item) => item.id !== row.id))
+    },
+  })
 
   if (loading) {
 
