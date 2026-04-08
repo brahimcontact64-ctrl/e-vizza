@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // ✅ PUBLIC ROUTES (NO AUTH)
+  // ✅ PUBLIC ROUTES
   const publicRoutes = [
     '/',
     '/auth/login',
@@ -18,7 +18,7 @@ export async function middleware(req: NextRequest) {
   );
 
   if (isPublic) {
-    return NextResponse.next({ request: req });
+    return NextResponse.next();
   }
 
   // ✅ PROTECTED ROUTES
@@ -35,20 +35,18 @@ export async function middleware(req: NextRequest) {
   );
 
   if (!isProtected) {
-    return NextResponse.next({ request: req });
+    return NextResponse.next();
   }
 
-  const res = NextResponse.next({ request: req });
+  const res = NextResponse.next();
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return req.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
+        getAll: () => req.cookies.getAll(),
+        setAll: (cookiesToSet) => {
           cookiesToSet.forEach(({ name, value, options }) => {
             res.cookies.set(name, value, options);
           });
