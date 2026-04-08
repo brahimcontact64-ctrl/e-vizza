@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
   const nextPath = searchParams.get('next');
@@ -19,12 +20,7 @@ export async function GET(request: Request) {
     {
       cookies: {
         getAll() {
-          return request.headers.get('cookie')
-            ?.split(';')
-            .map((c) => {
-              const [name, ...rest] = c.trim().split('=');
-              return { name, value: rest.join('=') };
-            }) || [];
+          return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
@@ -38,7 +34,7 @@ export async function GET(request: Request) {
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
-    console.error(error);
+    console.error('Auth callback exchange error:', error.message);
     return NextResponse.redirect(`${origin}/auth/login`);
   }
 

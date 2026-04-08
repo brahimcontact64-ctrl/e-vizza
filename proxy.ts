@@ -5,16 +5,6 @@ import { createServerClient } from '@supabase/ssr';
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Always let the OAuth callback through — it sets its own cookies.
-  if (pathname.startsWith('/auth/callback')) {
-    return NextResponse.next();
-  }
-
-  // Public auth routes: pass through without session checks.
-  if (pathname.startsWith('/auth/')) {
-    return NextResponse.next({ request: req });
-  }
-
   const protectedRoutes = [
     '/dashboard',
     '/applications',
@@ -52,20 +42,19 @@ export async function proxy(req: NextRequest) {
 
   const {
     data: { session },
+    error,
   } = await supabase.auth.getSession();
 
-  const user = session?.user;
+  if (error) {
+    console.error('Proxy auth session error:', error.message);
+  }
 
-  console.log({
-    authUser: user?.id ?? null,
-    hasAccessCookie: Boolean(req.cookies.get('sb-access-token')),
-    hasRefreshCookie: Boolean(req.cookies.get('sb-refresh-token')),
-  });
+  const user = session?.user;
 
   if (!user) {
     const loginUrl = req.nextUrl.clone();
     loginUrl.pathname = '/auth/login';
-    loginUrl.searchParams.set('redirect', pathname);
+    loginUrl.searchParams.set('redirect', `${pathname}${req.nextUrl.search}`);
     return NextResponse.redirect(loginUrl);
   }
 

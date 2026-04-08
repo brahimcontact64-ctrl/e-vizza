@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { Profile } from '@/types/database';
@@ -10,6 +10,7 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  profileLoading: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
   signInWithEmail: (
@@ -33,8 +34,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
 
-  const ensureProfileForAuthenticatedUser = async (authenticatedUser: User) => {
+  const ensureProfileForAuthenticatedUser = useCallback(async (authenticatedUser: User) => {
+    setProfileLoading(true);
+
     try {
       const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
@@ -80,22 +84,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Profile ensure error:', error);
       setProfile(null);
+    } finally {
+      setProfileLoading(false);
     }
-  };
+  }, []);
 
-  const clearAuthState = () => {
+  const clearAuthState = useCallback(() => {
     setSession(null);
     setUser(null);
     setProfile(null);
-  };
+    setProfileLoading(false);
+  }, []);
 
-  const handleAuthFailure = async (error: unknown) => {
-    console.error('Supabase auth failure:', error);
-    clearAuthState();
-    setLoading(false);
-  };
+  const hydrateFromSession = useCallback(async (nextSession: Session | null) => {
+    const authenticatedUser = nextSession?.user ?? null;
 
-  const refreshUser = async () => {
+    setSession(nextSession);
+    setUser(authenticatedUser);
+
+    if (!authenticatedUser) {
+      setProfile(null);
+      setProfileLoading(false);
+      return;
+    }
+
+    await ensureProfileForAuthenticatedUser(authenticatedUser);
+  }, [ensureProfileForAuthenticatedUser]);
+
+  const refreshUser = useCallback(async () => {
     try {
       const {
         data: { session: currentSession },
@@ -106,20 +122,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
 
-      const authenticatedUser = currentSession?.user;
-
-      if (!authenticatedUser) {
-        clearAuthState();
-        return;
-      }
-
-      setSession(currentSession ?? null);
-      setUser(authenticatedUser);
-      await ensureProfileForAuthenticatedUser(authenticatedUser);
+      await hydrateFromSession(currentSession ?? null);
     } catch (error) {
-      await handleAuthFailure(error);
+      console.error('Supabase refreshUser failure:', error);
     }
-  };
+  }, [hydrateFromSession]);
 
   useEffect(() => {
     let mounted = true;
@@ -137,19 +144,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw error;
         }
 
-        const authenticatedUser = initialSession?.user ?? null;
-
-        setSession(initialSession ?? null);
-        setUser(authenticatedUser);
-
-        if (authenticatedUser) {
-          await ensureProfileForAuthenticatedUser(authenticatedUser);
-        } else {
-          setProfile(null);
-        }
+        await hydrateFromSession(initialSession ?? null);
       } catch (error) {
         if (!mounted) return;
-        await handleAuthFailure(error);
+        console.error('Supabase auth init failure:', error);
       } finally {
         if (mounted) {
           setLoading(false);
@@ -165,22 +163,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!mounted) return;
 
       try {
-        const authenticatedUser = nextSession?.user ?? null;
-
-        setSession(nextSession ?? null);
-        setUser(authenticatedUser);
-
-        if (authenticatedUser) {
-          await refreshUser();
-        } else {
-          setProfile(null);
-        }
-
         if (event === 'SIGNED_OUT') {
           clearAuthState();
+          return;
         }
+
+        await hydrateFromSession(nextSession ?? null);
       } catch (error) {
-        await handleAuthFailure(error);
+        console.error('Supabase auth state sync failure:', error);
       } finally {
         setLoading(false);
       }
@@ -190,7 +180,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [clearAuthState, hydrateFromSession]);
 
   const signInWithEmail = async (email: string, password: string) => {
     setLoading(true);
@@ -217,7 +207,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
     } catch (error) {
       console.error('Sign in error:', error);
-      await handleAuthFailure(error);
       return { error: { message: 'Sign in failed' } as AuthError, session: null };
     } finally {
       setLoading(false);
@@ -291,6 +280,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         profile,
         loading,
+        profileLoading,
         isAdmin,
         isSuperAdmin,
         signInWithEmail,
