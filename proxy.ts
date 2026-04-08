@@ -2,9 +2,26 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
-export async function proxy(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // ✅ PUBLIC ROUTES (NO AUTH)
+  const publicRoutes = [
+    '/',
+    '/auth/login',
+    '/auth/callback',
+    '/destinations',
+  ];
+
+  const isPublic = publicRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
+
+  if (isPublic) {
+    return NextResponse.next({ request: req });
+  }
+
+  // ✅ PROTECTED ROUTES
   const protectedRoutes = [
     '/dashboard',
     '/applications',
@@ -42,21 +59,12 @@ export async function proxy(req: NextRequest) {
 
   const {
     data: { session },
-    error,
   } = await supabase.auth.getSession();
-
-  if (error) {
-    console.error('Proxy auth error:', error.message);
-  }
 
   if (!session?.user) {
     const loginUrl = req.nextUrl.clone();
     loginUrl.pathname = '/auth/login';
-    loginUrl.searchParams.set(
-      'redirect',
-      `${pathname}${req.nextUrl.search}`
-    );
-
+    loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
