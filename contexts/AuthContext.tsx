@@ -127,6 +127,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [hydrateFromSession]);
 
+  const getCanonicalSiteUrl = useCallback(() => {
+    const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+
+    if (configuredSiteUrl) {
+      return configuredSiteUrl.replace(/\/$/, '');
+    }
+
+    if (typeof window !== 'undefined') {
+      return window.location.origin.replace(/\/$/, '');
+    }
+
+    throw new Error('Missing site URL for OAuth redirect');
+  }, []);
+
   useEffect(() => {
     let mounted = true;
 
@@ -238,7 +252,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error('Google OAuth must run in the browser');
     }
 
-    const callbackUrl = new URL('/auth/callback', window.location.origin);
+    const callbackUrl = new URL('/auth/callback', getCanonicalSiteUrl());
     if (redirectPath?.startsWith('/')) {
       callbackUrl.searchParams.set('next', redirectPath);
     }

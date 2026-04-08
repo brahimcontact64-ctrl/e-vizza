@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,11 +21,18 @@ function GoogleIcon() {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signInWithGoogle, loading: authLoading } = useAuth();
+  const { session, signInWithGoogle, loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const { t } = useLanguage();
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (authLoading || !session?.user) return;
+
+    const redirect = searchParams.get('redirect');
+    router.replace(redirect?.startsWith('/') ? redirect : '/dashboard');
+  }, [authLoading, router, searchParams, session]);
 
   const handleGoogleLogin = async () => {
     setError('');
