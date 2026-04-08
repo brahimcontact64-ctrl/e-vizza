@@ -54,7 +54,6 @@ export default function SignupPage() {
     try {
       const redirect = resolveSafeRedirect();
       await signInWithGoogle(redirect);
-      router.refresh();
     } catch {
       setError(t.auth.google.failed);
       setGoogleLoading(false);
