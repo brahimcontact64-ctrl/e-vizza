@@ -12,7 +12,13 @@ export async function GET(request: NextRequest) {
   }
 
   const redirectPath =
-    nextPath && nextPath.startsWith('/') ? nextPath : '/dashboard';
+    nextPath &&
+    nextPath.startsWith('/') &&
+    !nextPath.startsWith('/auth/login') &&
+    !nextPath.startsWith('/auth/signup') &&
+    !nextPath.startsWith('/auth/callback')
+      ? nextPath
+      : '/dashboard';
 
   const response = NextResponse.redirect(`${origin}${redirectPath}`);
 

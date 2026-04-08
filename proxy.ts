@@ -11,7 +11,7 @@ export async function proxy(req: NextRequest) {
     pathname === '/' ||
     pathname.startsWith('/destinations')
   ) {
-    return NextResponse.next();
+    return NextResponse.next({ request: req });
   }
 
   // 🟢 فقط هذه routes محمية
@@ -28,10 +28,10 @@ export async function proxy(req: NextRequest) {
   );
 
   if (!isProtected) {
-    return NextResponse.next();
+    return NextResponse.next({ request: req });
   }
 
-  const res = NextResponse.next();
+  const res = NextResponse.next({ request: req });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -57,10 +57,7 @@ export async function proxy(req: NextRequest) {
     const loginUrl = req.nextUrl.clone();
     loginUrl.pathname = '/auth/login';
 
-    // 🧠 مهم: ما نضيفوش redirect إذا راهو أصلاً login
-    if (!pathname.startsWith('/auth/login')) {
-      loginUrl.searchParams.set('redirect', pathname);
-    }
+    loginUrl.searchParams.set('redirect', `${pathname}${req.nextUrl.search}`);
 
     return NextResponse.redirect(loginUrl);
   }

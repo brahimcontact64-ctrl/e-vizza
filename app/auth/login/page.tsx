@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,18 +27,31 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const resolveSafeRedirect = useCallback(() => {
+    const redirect = searchParams.get('redirect');
+
+    if (!redirect || !redirect.startsWith('/')) {
+      return '/dashboard';
+    }
+
+    if (redirect.startsWith('/auth/login') || redirect.startsWith('/auth/signup') || redirect.startsWith('/auth/callback')) {
+      return '/dashboard';
+    }
+
+    return redirect;
+  }, [searchParams]);
+
   useEffect(() => {
     if (authLoading || !session?.user) return;
 
-    const redirect = searchParams.get('redirect');
-    router.replace(redirect?.startsWith('/') ? redirect : '/dashboard');
-  }, [authLoading, router, searchParams, session]);
+    router.replace(resolveSafeRedirect());
+  }, [authLoading, resolveSafeRedirect, router, session]);
 
   const handleGoogleLogin = async () => {
     setError('');
     setGoogleLoading(true);
     try {
-      const redirect = searchParams.get('redirect') || undefined;
+      const redirect = resolveSafeRedirect();
       await signInWithGoogle(redirect);
       router.refresh();
     } catch {
