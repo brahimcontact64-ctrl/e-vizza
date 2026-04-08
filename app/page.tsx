@@ -93,27 +93,54 @@ export default function HomePage() {
     if (!selectedNationality && countryOptions.length > 0) {
       setSelectedNationality(countryOptions[0]);
     }
-    if (!selectedDestination && countryOptions.length > 0) {
-      setSelectedDestination(countryOptions[0]);
-    }
-  }, [countryOptions, selectedDestination, selectedNationality]);
+  }, [countryOptions, selectedNationality]);
 
   useEffect(() => {
-    if (visas.length > 0 && !selectedVisa) {
-      setSelectedVisa(visas[0]);
-      setSelectedDestination(visas[0].country_name);
+    if (visas.length === 0) return;
+
+    const savedVisaId = typeof window !== 'undefined' ? localStorage.getItem('selectedVisaId') : null;
+
+    let nextVisa = selectedVisa ? visas.find((visa) => visa.id === selectedVisa.id) ?? null : null;
+
+    if (!nextVisa && savedVisaId) {
+      nextVisa = visas.find((visa) => String(visa.id) === savedVisaId) ?? null;
     }
-  }, [visas, selectedVisa]);
+
+    if (!nextVisa && selectedDestination) {
+      nextVisa = visas.find((visa) => visa.country_name === selectedDestination) ?? null;
+    }
+
+    if (!nextVisa) {
+      nextVisa = visas[0];
+    }
+
+    if (!selectedVisa || nextVisa.id !== selectedVisa.id) {
+      setSelectedVisa(nextVisa);
+    }
+
+    if (selectedDestination !== nextVisa.country_name) {
+      setSelectedDestination(nextVisa.country_name);
+    }
+  }, [selectedDestination, selectedVisa, visas]);
 
   useEffect(() => {
-    if (!selectedDestination) {
-      setSelectedVisa(null);
+    if (!selectedDestination || visas.length === 0) {
       return;
     }
 
     const visaMatch = visas.find((visa) => visa.country_name === selectedDestination) ?? null;
-    setSelectedVisa(visaMatch);
-  }, [selectedDestination, visas]);
+    if (visaMatch && (!selectedVisa || selectedVisa.id !== visaMatch.id)) {
+      setSelectedVisa(visaMatch);
+    }
+  }, [selectedDestination, selectedVisa, visas]);
+
+  useEffect(() => {
+    if (!selectedVisa || typeof window === 'undefined') return;
+    localStorage.setItem('selectedVisaId', String(selectedVisa.id));
+  }, [selectedVisa]);
+
+  const displayVisa = selectedVisa ?? visas[0] ?? null;
+  const displayDestination = displayVisa?.country_name ?? selectedDestination;
 
   const flagByCountry = (country: string) => {
     const map: Record<string, string> = {
@@ -189,10 +216,10 @@ export default function HomePage() {
                   </label>
                   <div className="relative">
                     <span className={`pointer-events-none absolute inset-y-0 flex items-center text-lg ${isRTL ? 'right-4' : 'left-4'}`}>
-                      {flagByCountry(selectedDestination)}
+                      {flagByCountry(displayDestination)}
                     </span>
                     <select
-                      value={selectedDestination}
+                      value={displayDestination}
                       onChange={(e) => {
                         const destination = e.target.value;
                         setSelectedDestination(destination);
@@ -216,10 +243,10 @@ export default function HomePage() {
                   <button
                     type="button"
                     onClick={() => {
-                      if (!selectedVisa) return;
-                      router.push(`/apply/new?visa_id=${selectedVisa.id}`);
+                      if (!displayVisa) return;
+                      router.push(`/apply/new?visa_id=${displayVisa.id}`);
                     }}
-                    disabled={!selectedVisa}
+                    disabled={!displayVisa}
                     className="inline-flex h-14 items-center justify-center gap-2.5 rounded-[24px] bg-gradient-to-r from-[#00D474] to-[#00D474]/80 px-6 text-sm font-bold text-white shadow-lg shadow-[#00D474]/30 transition-all duration-200 hover:shadow-xl hover:shadow-[#00D474]/40 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-lg"
                   >
                     {t.home.hero.cta}
