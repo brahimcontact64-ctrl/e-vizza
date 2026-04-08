@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -9,6 +9,8 @@ import { supabase } from '@/lib/supabase';
 import { Visa } from '@/types/database';
 import Navbar from '@/components/Navbar';
 import AnimateOnScroll from '@/components/AnimateOnScroll';
+import AnimatedCounter from '@/components/AnimatedCounter';
+import { useStats } from '@/hooks/useStats';
 import {
   ArrowRight,
   Clock,
@@ -35,16 +37,12 @@ import {
 export default function HomePage() {
   const router = useRouter();
   const { t, isRTL } = useLanguage();
+  const { stats, loading: statsLoading } = useStats();
   const [visas, setVisas] = useState<Visa[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedNationality, setSelectedNationality] = useState('');
   const [selectedDestination, setSelectedDestination] = useState('');
   const [selectedVisa, setSelectedVisa] = useState<Visa | null>(null);
-  const [stats, setStats] = useState({
-    visas: 0,
-    users: 0,
-    successRate: 98,
-  });
   const currentYear = new Date().getFullYear();
 
   useEffect(() => {
@@ -66,39 +64,6 @@ export default function HomePage() {
       setLoading(false);
     }
   };
-
-  const fetchStats = useCallback(async () => {
-    try {
-      const [visasRes, usersRes, totalAppsRes, approvedAppsRes] = await Promise.all([
-        supabase
-          .from('visas')
-          .select('*', { count: 'exact', head: true })
-          .eq('is_active', true),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase.from('applications').select('*', { count: 'exact', head: true }),
-        supabase
-          .from('applications')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'approved'),
-      ]);
-
-      const visasCount = visasRes.count ?? 0;
-      const usersCount = usersRes.count ?? 0;
-      const totalApplications = totalAppsRes.count ?? 0;
-      const approvedApplications = approvedAppsRes.count ?? 0;
-
-      const successRate =
-        totalApplications > 0 ? Math.round((approvedApplications / totalApplications) * 100) : 98;
-
-      setStats({
-        visas: visasCount,
-        users: usersCount,
-        successRate,
-      });
-    } catch (error) {
-      console.error(error);
-    }
-  }, []);
 
   const getCountryImageByName = (countryName: string): string => {
     const imageMap: { [key: string]: string } = {
@@ -150,21 +115,6 @@ export default function HomePage() {
     setSelectedVisa(visaMatch);
   }, [selectedDestination, visas]);
 
-  useEffect(() => {
-    fetchStats();
-
-    const channel = supabase
-      .channel('stats')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'applications' }, fetchStats)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, fetchStats)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'visas' }, fetchStats)
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [fetchStats]);
-
   const flagByCountry = (country: string) => {
     const map: Record<string, string> = {
       Algeria: '🇩🇿',
@@ -180,6 +130,17 @@ export default function HomePage() {
     };
     return map[country] || '🌍';
   };
+
+  const compactNumberFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat('en', {
+        notation: 'compact',
+        maximumFractionDigits: 0,
+      }),
+    []
+  );
+
+  const formatCompactCount = (value: number) => compactNumberFormatter.format(value).toUpperCase();
 
   return (
     <div className="min-h-screen bg-white antialiased">
@@ -303,16 +264,36 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl">
           <AnimateOnScroll className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
             {[
-              { icon: <Globe2 size={28} />, value: `+${stats.visas}`, label: t.home.destinations.title },
-              { icon: <Users size={28} />, value: `+${stats.users}`, label: t.home.footer.partner },
-              { icon: <Zap size={28} />, value: '24h', label: t.home.features.fast.title },
-              { icon: <TrendingUp size={28} />, value: `${stats.successRate}%`, label: t.home.card.verified },
+              { icon: <Globe2 size={28} />, key: 'visas', label: t.home.destinations.title },
+              { icon: <Users size={28} />, key: 'users', label: t.home.footer.partner },
+              { icon: <Zap size={28} />, key: 'processingTime', label: t.home.features.fast.title },
+              { icon: <TrendingUp size={28} />, key: 'successRate', label: t.home.card.verified },
             ].map((item, idx) => (
               <div key={idx} className="group rounded-[24px] border border-[#DDEAE5] bg-gradient-to-br from-white to-[#F7FBFA] p-5 text-center transition-all duration-200 hover:border-[#00D474] hover:shadow-lg hover:shadow-[#00D474]/10 sm:p-6">
                 <div className="mx-auto mb-3.5 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#00D474]/10 text-[#00D474] transition-all duration-200 group-hover:scale-110">
                   {item.icon}
                 </div>
-                <p className="text-3xl font-black tracking-tight text-[#0B3948] sm:text-4xl">{item.value}</p>
+                <p className="text-3xl font-black tracking-tight text-[#0B3948] sm:text-4xl">
+                  {statsLoading ? (
+                    <span className="mx-auto block h-9 w-20 animate-pulse rounded-xl bg-[#E8F1EE]" />
+                  ) : item.key === 'visas' ? (
+                    <>
+                      +
+                      <AnimatedCounter value={stats.visas} formatter={formatCompactCount} />
+                    </>
+                  ) : item.key === 'users' ? (
+                    <>
+                      +
+                      <AnimatedCounter value={stats.users} formatter={formatCompactCount} />
+                    </>
+                  ) : item.key === 'successRate' ? (
+                    <>
+                      <AnimatedCounter value={stats.successRate} />%
+                    </>
+                  ) : (
+                    stats.processingTime
+                  )}
+                </p>
                 <p className="mt-2 text-xs font-medium text-[#6B7C85] uppercase tracking-wider">{item.label}</p>
               </div>
             ))}
