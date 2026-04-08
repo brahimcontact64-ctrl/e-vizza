@@ -11,7 +11,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/auth/login`);
   }
 
-  const redirectPath = nextPath?.startsWith('/') ? nextPath : '/dashboard';
+  const redirectPath =
+    nextPath && nextPath.startsWith('/') ? nextPath : '/dashboard';
+
   const response = NextResponse.redirect(`${origin}${redirectPath}`);
 
   const supabase = createServerClient(
@@ -19,11 +21,9 @@ export async function GET(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
+        getAll: () => request.cookies.getAll(),
+        setAll: (cookies) => {
+          cookies.forEach(({ name, value, options }) => {
             response.cookies.set(name, value, options);
           });
         },
@@ -31,10 +31,11 @@ export async function GET(request: NextRequest) {
     }
   );
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  // 🔥 أهم سطر
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-  if (error) {
-    console.error('Auth callback exchange error:', error.message);
+  if (error || !data.session) {
+    console.error('OAuth error:', error);
     return NextResponse.redirect(`${origin}/auth/login`);
   }
 
